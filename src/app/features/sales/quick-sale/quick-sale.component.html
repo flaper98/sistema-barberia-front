@@ -1,0 +1,303 @@
+<div class="page-container fade-in">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Venta Rápida</h1>
+      <p class="page-subtitle">Registra una venta en pocos pasos</p>
+    </div>
+    <div class="steps-indicator">
+      <div class="step-dot" [class.active]="step === 'setup'"   [class.done]="step !== 'setup'">
+        <mat-icon>person</mat-icon><span>Inicio</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step-dot" [class.active]="step === 'items'"   [class.done]="step === 'payment' || step === 'done'">
+        <mat-icon>shopping_cart</mat-icon><span>Ítems</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step-dot" [class.active]="step === 'payment'" [class.done]="step === 'done'">
+        <mat-icon>payments</mat-icon><span>Pago</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step-dot" [class.active]="step === 'done'">
+        <mat-icon>check_circle</mat-icon><span>Listo</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STEP 1: Setup ─────────────────────────────────────────────── -->
+  <div class="sale-layout" *ngIf="step === 'setup'">
+    <div class="card">
+      <h3 class="section-title"><mat-icon>content_cut</mat-icon> Seleccionar barbero *</h3>
+      <div class="worker-grid">
+        <div
+          *ngFor="let w of workers"
+          class="worker-card"
+          [class.selected]="selectedWorker?.id === w.id"
+          (click)="selectedWorker = w">
+          <div class="worker-avatar">{{ w.avatar || (w.nombre[0] + w.apellido[0]) }}</div>
+          <div class="worker-name">{{ w.nombre }}</div>
+          <div class="worker-spec text-muted text-sm">{{ w.especialidad }}</div>
+          <mat-icon class="selected-check" *ngIf="selectedWorker?.id === w.id">check_circle</mat-icon>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="section-title"><mat-icon>person_search</mat-icon> Cliente (opcional)</h3>
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Buscar cliente</mat-label>
+        <input matInput [(ngModel)]="searchCustomer" placeholder="Nombre, teléfono...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <div class="customer-list">
+        <div
+          class="customer-item"
+          [class.selected]="selectedCustomer?.id === null"
+          (click)="selectedCustomer = null">
+          <mat-icon class="anon-icon">person_off</mat-icon>
+          <span>Sin cliente registrado</span>
+        </div>
+        <div
+          *ngFor="let c of filteredCustomers"
+          class="customer-item"
+          [class.selected]="selectedCustomer?.id === c.id"
+          (click)="selectedCustomer = c">
+          <div class="customer-avatar">{{ c.nombre[0] }}{{ c.apellido[0] }}</div>
+          <div class="customer-info">
+            <span class="customer-name">{{ c.nombre }} {{ c.apellido }}</span>
+            <span class="text-muted text-sm">{{ c.telefono }}</span>
+          </div>
+          <div class="loyalty-stamps" *ngIf="c.cantidadSellos > 0">
+            <mat-icon class="stamp-icon">loyalty</mat-icon>
+            <span>{{ c.cantidadSellos }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-actions">
+      <div class="selection-summary" *ngIf="selectedWorker">
+        Barbero: <strong>{{ selectedWorker.nombre }}</strong>
+        <span *ngIf="selectedCustomer"> · Cliente: <strong>{{ selectedCustomer.nombre }}</strong></span>
+      </div>
+      <button mat-flat-button color="primary" (click)="goToItems()" [disabled]="!selectedWorker">
+        Continuar <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- ─── STEP 2: Items ─────────────────────────────────────────────── -->
+  <div class="sale-layout items-layout" *ngIf="step === 'items'">
+    <!-- Catálogo -->
+    <div class="catalog-panel card">
+      <mat-tab-group [(selectedIndex)]="itemTab">
+        <mat-tab label="Servicios">
+          <div class="tab-content">
+            <mat-form-field appearance="outline" class="w-full search-field">
+              <mat-label>Buscar servicio</mat-label>
+              <input matInput [(ngModel)]="searchService">
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+            <div class="items-grid">
+              <div
+                *ngFor="let s of filteredServices"
+                class="catalog-item service"
+                (click)="addService(s)">
+                <div class="item-icon"><mat-icon>spa</mat-icon></div>
+                <div class="item-name">{{ s.nombre }}</div>
+                <div class="item-meta text-muted text-sm">{{ s.duracionMinutos }} min</div>
+                <div class="item-price">S/ {{ s.precio | number:'1.2-2' }}</div>
+                <div class="item-add"><mat-icon>add_circle</mat-icon></div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+        <mat-tab label="Productos">
+          <div class="tab-content">
+            <mat-form-field appearance="outline" class="w-full search-field">
+              <mat-label>Buscar producto</mat-label>
+              <input matInput [(ngModel)]="searchProduct">
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+            <div class="items-grid">
+              <div
+                *ngFor="let p of filteredProducts"
+                class="catalog-item product"
+                (click)="addProduct(p)">
+                <div class="item-icon"><mat-icon>inventory_2</mat-icon></div>
+                <div class="item-name">{{ p.nombre }}</div>
+                <div class="item-meta text-muted text-sm">Stock: {{ p.stockActual }}</div>
+                <div class="item-price">S/ {{ p.precioVenta | number:'1.2-2' }}</div>
+                <div class="item-add"><mat-icon>add_circle</mat-icon></div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+
+    <!-- Cart -->
+    <div class="cart-panel">
+      <div class="card cart-card">
+        <h3 class="section-title">
+          <mat-icon>shopping_cart</mat-icon>
+          Carrito
+          <span class="cart-badge" *ngIf="cartCount">{{ cartCount }}</span>
+        </h3>
+
+        <div class="empty-cart" *ngIf="!cartItems.length">
+          <mat-icon>remove_shopping_cart</mat-icon>
+          <p>Agrega servicios o productos</p>
+        </div>
+
+        <div class="cart-items" *ngIf="cartItems.length">
+          <div class="cart-item" *ngFor="let item of cartItems; let i = index">
+            <div class="ci-type">
+              <mat-icon>{{ item.tipo === 'SERVICIO' ? 'spa' : 'inventory_2' }}</mat-icon>
+            </div>
+            <div class="ci-info">
+              <div class="ci-name">{{ item.nombre }}</div>
+              <div class="ci-price text-muted text-sm">S/ {{ item.precio | number:'1.2-2' }} c/u</div>
+            </div>
+            <div class="ci-qty">
+              <button mat-icon-button (click)="decreaseItem(item)"><mat-icon>remove</mat-icon></button>
+              <span>{{ item.cantidad }}</span>
+              <button mat-icon-button (click)="increaseServiceItem(item)" *ngIf="item.tipo === 'SERVICIO'">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+            <div class="ci-subtotal">S/ {{ item.subtotal | number:'1.2-2' }}</div>
+            <button mat-icon-button (click)="removeItem(i)" class="ci-remove">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <mat-divider *ngIf="cartItems.length" class="mt-16 mb-16"></mat-divider>
+
+        <div class="cart-summary" *ngIf="cartItems.length">
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <span>S/ {{ subtotal | number:'1.2-2' }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Descuento</span>
+            <div class="discount-input">
+              <span>S/ -</span>
+              <input type="number" min="0" [max]="subtotal" [(ngModel)]="discount" class="discount-field">
+            </div>
+          </div>
+          <mat-divider class="mt-8 mb-8"></mat-divider>
+          <div class="summary-row total">
+            <span>TOTAL</span>
+            <span>S/ {{ total | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <div class="step-actions mt-16">
+          <button mat-stroked-button (click)="step = 'setup'">
+            <mat-icon>arrow_back</mat-icon> Atrás
+          </button>
+          <button mat-flat-button color="primary" (click)="goToPayment()" [disabled]="!cartItems.length">
+            Pago <mat-icon>arrow_forward</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STEP 3: Payment ───────────────────────────────────────────── -->
+  <div class="payment-layout" *ngIf="step === 'payment'">
+    <div class="card payment-card">
+      <h3 class="section-title"><mat-icon>payments</mat-icon> Método de pago</h3>
+      <div class="payment-methods">
+        <div
+          *ngFor="let pm of paymentMethods"
+          class="payment-method"
+          [class.selected]="selectedPayment === pm.value"
+          (click)="selectedPayment = pm.value">
+          <mat-icon>{{ pm.icon }}</mat-icon>
+          <span>{{ pm.label }}</span>
+        </div>
+      </div>
+
+      <mat-divider class="mt-24 mb-24"></mat-divider>
+
+      <!-- Order summary -->
+      <h3 class="section-title"><mat-icon>receipt</mat-icon> Resumen del pedido</h3>
+
+      <div class="summary-worker mb-16">
+        <mat-icon>content_cut</mat-icon>
+        <span>{{ selectedWorker?.nombre }} {{ selectedWorker?.apellido }}</span>
+        <span class="text-muted text-sm" *ngIf="selectedCustomer">· {{ selectedCustomer.nombre }} {{ selectedCustomer.apellido }}</span>
+      </div>
+
+      <div class="order-items">
+        <div class="order-item" *ngFor="let item of cartItems">
+          <span class="oi-qty">{{ item.cantidad }}x</span>
+          <span class="oi-name">{{ item.nombre }}</span>
+          <span class="oi-price">S/ {{ item.subtotal | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <mat-divider class="mt-16 mb-16"></mat-divider>
+
+      <div class="final-summary">
+        <div class="fs-row"><span>Subtotal</span><span>S/ {{ subtotal | number:'1.2-2' }}</span></div>
+        <div class="fs-row discount" *ngIf="discount > 0"><span>Descuento</span><span>- S/ {{ discount | number:'1.2-2' }}</span></div>
+        <div class="fs-row fs-total"><span>TOTAL A COBRAR</span><span>S/ {{ total | number:'1.2-2' }}</span></div>
+        <div class="fs-payment"><mat-icon>{{ getSelectedPaymentIcon() }}</mat-icon> {{ getSelectedPaymentLabel() }}</div>
+      </div>
+
+      <div class="loyalty-notice" *ngIf="selectedCustomer && hasServicesInCart()">
+        <mat-icon>loyalty</mat-icon>
+        <span>Se sumará 1 sello de fidelidad a <strong>{{ selectedCustomer.nombre }}</strong></span>
+      </div>
+
+      <div class="step-actions mt-24">
+        <button mat-stroked-button (click)="step = 'items'">
+          <mat-icon>arrow_back</mat-icon> Editar
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          class="confirm-btn"
+          (click)="confirmSale()"
+          [disabled]="loading">
+          <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
+          <span *ngIf="!loading">
+            <mat-icon>check_circle</mat-icon>
+            Confirmar venta · S/ {{ total | number:'1.2-2' }}
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STEP 4: Done ──────────────────────────────────────────────── -->
+  <div class="done-layout" *ngIf="step === 'done'">
+    <div class="card done-card">
+      <div class="done-icon"><mat-icon>check_circle</mat-icon></div>
+      <h2>¡Venta registrada!</h2>
+      <p class="text-muted">Venta #{{ lastSaleId }} completada exitosamente</p>
+
+      <div class="done-summary">
+        <div class="ds-row"><span>Barbero</span><strong>{{ selectedWorker?.nombre }}</strong></div>
+        <div class="ds-row" *ngIf="selectedCustomer"><span>Cliente</span><strong>{{ selectedCustomer!.nombre }}</strong></div>
+        <div class="ds-row"><span>Total cobrado</span><strong>S/ {{ total | number:'1.2-2' }}</strong></div>
+        <div class="ds-row"><span>Método de pago</span><strong>{{ selectedPayment }}</strong></div>
+        <div class="ds-row loyalty" *ngIf="selectedCustomer && hasServicesInCart()">
+          <mat-icon>loyalty</mat-icon>
+          <span>Sello agregado a {{ selectedCustomer!.nombre }}</span>
+        </div>
+      </div>
+
+      <div class="done-actions">
+        <button mat-stroked-button routerLink="/sales/list">Ver historial</button>
+        <button mat-flat-button color="primary" (click)="newSale()">
+          <mat-icon>add_shopping_cart</mat-icon>
+          Nueva venta
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

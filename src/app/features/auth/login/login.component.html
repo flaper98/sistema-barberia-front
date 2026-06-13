@@ -1,0 +1,99 @@
+<div class="login-page">
+
+  <!-- Panel izquierdo — branding -->
+  <div class="login-brand">
+    <div class="deco-circle deco-circle--top"></div>
+    <div class="deco-circle deco-circle--bottom"></div>
+
+    <div class="brand-content">
+      <div class="brand-logo">
+        <mat-icon>content_cut</mat-icon>
+      </div>
+      <h1>BarberSystem</h1>
+      <p class="brand-tagline">Sistema integral de gestión<br>para barberías modernas</p>
+      <div class="brand-divider"></div>
+      <ul class="features-list">
+        <li class="feature-item"><span class="feature-dot"></span>Gestión de citas y clientes</li>
+        <li class="feature-item"><span class="feature-dot"></span>Ventas rápidas e inventario</li>
+        <li class="feature-item"><span class="feature-dot"></span>Reportes y análisis financiero</li>
+        <li class="feature-item"><span class="feature-dot"></span>Programa de fidelización</li>
+      </ul>
+    </div>
+
+    <p class="brand-footer">© 2026 BarberSystem · Todos los derechos reservados</p>
+  </div>
+
+  <!-- Panel derecho — formulario -->
+  <div class="login-form-panel">
+    <div class="login-card">
+
+      <div class="form-header">
+        <div class="form-logo">
+          <mat-icon>content_cut</mat-icon>
+        </div>
+        <h2>Bienvenido</h2>
+        <p>Ingresa tus credenciales para acceder al sistema</p>
+      </div>
+
+      <div class="error-alert" *ngIf="errorMessage">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Correo electrónico</mat-label>
+          <input matInput type="email" formControlName="email"
+                 placeholder="usuario@barbersystem.com" autocomplete="email">
+          <mat-icon matPrefix>email</mat-icon>
+          <mat-error *ngIf="emailCtrl.hasError('required')">El correo es requerido</mat-error>
+          <mat-error *ngIf="emailCtrl.hasError('email')">Formato de correo inválido</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Contraseña</mat-label>
+          <input matInput [type]="hidePassword ? 'password' : 'text'"
+                 formControlName="password" autocomplete="current-password">
+          <mat-icon matPrefix>lock</mat-icon>
+          <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword"
+                  [attr.aria-label]="hidePassword ? 'Mostrar contraseña' : 'Ocultar contraseña'">
+            <mat-icon>{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="passCtrl.hasError('required')">La contraseña es requerida</mat-error>
+          <mat-error *ngIf="passCtrl.hasError('minlength')">Mínimo 4 caracteres</mat-error>
+        </mat-form-field>
+
+        <button mat-flat-button type="submit" class="submit-btn w-full" [disabled]="loading">
+          <mat-spinner diameter="22" *ngIf="loading" class="btn-spinner"></mat-spinner>
+          <ng-container *ngIf="!loading">
+            <mat-icon>login</mat-icon>
+            Ingresar al sistema
+          </ng-container>
+        </button>
+
+      </form>
+
+      <div class="demo-section">
+        <span class="demo-label">Cuentas de demostración</span>
+        <div class="demo-accounts">
+          <button *ngFor="let acc of demoAccounts"
+                  mat-stroked-button class="demo-btn"
+                  (click)="fillDemo(acc.email)">
+            {{ acc.rol }}
+          </button>
+        </div>
+        <p class="demo-hint">Contraseña: <code>123456</code></p>
+      </div>
+
+      <div class="booking-section">
+        <span class="booking-label">¿Eres cliente y quieres reservar?</span>
+        <a mat-flat-button routerLink="/reservar-cita" class="booking-btn w-full">
+          <mat-icon>calendar_today</mat-icon>
+          Reservar cita en línea
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>

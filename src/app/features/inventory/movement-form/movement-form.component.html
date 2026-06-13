@@ -1,0 +1,39 @@
+<div class="page-container fade-in">
+  <div class="page-header"><h1 class="page-title">Registrar movimiento de stock</h1></div>
+  <div class="card" style="max-width:560px">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Producto *</mat-label>
+          <mat-select formControlName="productoId">
+            <mat-option *ngFor="let p of products" [value]="p.id">{{ p.nombre }} (Stock: {{ p.stockActual }})</mat-option>
+          </mat-select>
+          <mat-error>Requerido</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de movimiento *</mat-label>
+          <mat-select formControlName="tipoMovimiento">
+            <mat-option *ngFor="let t of movTypes" [value]="t">{{ t }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Cantidad *</mat-label>
+          <input matInput type="number" formControlName="cantidad" min="1">
+          <mat-error>Mínimo 1</mat-error>
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Motivo *</mat-label>
+        <input matInput formControlName="motivo" placeholder="Compra a proveedor, ajuste de inventario...">
+        <mat-error>Requerido</mat-error>
+      </mat-form-field>
+      <div class="form-actions">
+        <button mat-stroked-button type="button" (click)="cancel()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="saving">
+          <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+          <span *ngIf="!saving">Registrar movimiento</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

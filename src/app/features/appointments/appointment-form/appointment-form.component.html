@@ -1,0 +1,87 @@
+<div class="page-container fade-in">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{{ isEdit ? 'Editar cita' : 'Nueva cita' }}</h1>
+      <p class="page-subtitle">Completa los datos de la cita</p>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="text-center mt-24"><mat-spinner diameter="40" style="margin:auto"></mat-spinner></div>
+
+  <div class="form-layout" *ngIf="!loading">
+    <div class="card">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Barbero *</mat-label>
+            <mat-select formControlName="barberoId">
+              <mat-option *ngFor="let w of workers" [value]="w.id">
+                {{ w.nombre }} {{ w.apellido }}
+              </mat-option>
+            </mat-select>
+            <mat-error>Selecciona un barbero</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cliente</mat-label>
+            <mat-select formControlName="clienteId">
+              <mat-option [value]="null">Sin cliente</mat-option>
+              <mat-option *ngFor="let c of customers" [value]="c.id">
+                {{ c.nombre }} {{ c.apellido }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha *</mat-label>
+            <input matInput [matDatepicker]="dp" formControlName="fecha">
+            <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
+            <mat-datepicker #dp></mat-datepicker>
+            <mat-error>La fecha es requerida</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Hora *</mat-label>
+            <mat-select formControlName="hora">
+              <mat-option *ngFor="let h of availableHours" [value]="h">{{ h }}</mat-option>
+            </mat-select>
+            <mat-error>La hora es requerida</mat-error>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="w-full mt-8">
+          <mat-label>Notas</mat-label>
+          <textarea matInput formControlName="notas" rows="2" placeholder="Instrucciones especiales..."></textarea>
+        </mat-form-field>
+
+        <h3 class="section-sub">Servicios *</h3>
+        <div class="services-grid">
+          <div
+            *ngFor="let s of services"
+            class="service-tile"
+            [class.selected]="isSelected(s)"
+            (click)="toggleService(s)">
+            <mat-icon>{{ isSelected(s) ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+            <div class="st-info">
+              <span class="st-name">{{ s.nombre }}</span>
+              <span class="st-meta text-muted text-sm">{{ s.duracionMinutos }} min · S/ {{ s.precio }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="total-bar" *ngIf="selectedServices.length">
+          <span>{{ selectedServices.length }} servicio(s) seleccionado(s)</span>
+          <span class="total-val">Total estimado: S/ {{ totalEstimado | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="form-actions">
+          <button mat-stroked-button type="button" (click)="cancel()">Cancelar</button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="saving">
+            <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+            <span *ngIf="!saving">{{ isEdit ? 'Actualizar' : 'Crear cita' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

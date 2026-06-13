@@ -1,0 +1,102 @@
+<div class="page-container fade-in">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Agenda / Citas</h1>
+      <p class="page-subtitle">Gestiona las citas del día</p>
+    </div>
+    <button mat-flat-button color="primary" (click)="goToNewAppointment()">
+      <mat-icon>add</mat-icon> Nueva cita
+    </button>
+  </div>
+
+  <!-- Date toolbar -->
+  <div class="date-toolbar card mb-24">
+    <button mat-icon-button (click)="onDateChange(getDateOffset(-1))">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <mat-form-field appearance="outline" class="date-field">
+      <mat-label>Fecha</mat-label>
+      <input matInput [matDatepicker]="picker" [value]="selectedDateObj" (dateChange)="onPickerChange($any($event))">
+      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
+    <button mat-icon-button (click)="onDateChange(getDateOffset(1))">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+    <button mat-stroked-button (click)="goToday()">Hoy</button>
+    <span class="date-label">{{ selectedDate }}</span>
+  </div>
+
+  <div *ngIf="loading" class="text-center mt-24"><mat-spinner diameter="40" style="margin:auto"></mat-spinner></div>
+
+  <div class="agenda-layout" *ngIf="!loading">
+    <!-- Timeline -->
+    <div class="timeline-panel card">
+      <h3 class="card-title">Agenda del día ({{ appointments.length }} citas)</h3>
+
+      <div class="empty-state" *ngIf="appointments.length === 0">
+        <mat-icon>event_available</mat-icon>
+        <p>Sin citas para este día</p>
+        <button mat-flat-button color="primary" (click)="goToNewAppointment()">Crear primera cita</button>
+      </div>
+
+      <div class="timeline" *ngIf="appointments.length > 0">
+        <div *ngFor="let appt of appointments" class="timeline-item" [ngClass]="getStatusClass(appt.estado)">
+          <div class="tl-time">{{ appt.hora }}</div>
+          <div class="tl-dot"></div>
+          <div class="tl-card">
+            <div class="tl-header">
+              <span class="tl-client">{{ appt.clienteNombre }}</span>
+              <div class="tl-badges">
+                <span class="web-badge" *ngIf="appt.appointmentSource === 'PUBLIC_WEB'" matTooltip="Reserva desde web pública">
+                  <mat-icon>public</mat-icon> Web
+                </span>
+                <span class="status-chip" [ngClass]="getStatusClass(appt.estado)">{{ appt.estado }}</span>
+              </div>
+            </div>
+            <div class="tl-worker text-muted text-sm">
+              <mat-icon>content_cut</mat-icon>{{ appt.barberoNombre }}
+            </div>
+            <div class="tl-services text-sm">
+              {{ getServiceNames(appt) }}
+            </div>
+            <div class="tl-footer">
+              <span class="tl-total">S/ {{ appt.totalEstimado | number:'1.2-2' }}</span>
+              <div class="tl-actions">
+                <button mat-icon-button [matMenuTriggerFor]="statusMenu" matTooltip="Cambiar estado">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <button mat-icon-button [routerLink]="'/appointments/' + appt.id" matTooltip="Editar">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <mat-menu #statusMenu="matMenu">
+                  <button mat-menu-item *ngFor="let s of statuses" (click)="changeStatus(appt, s)">
+                    <span class="status-chip" [ngClass]="getStatusClass(s)">{{ s }}</span>
+                  </button>
+                </mat-menu>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary panel -->
+    <div class="summary-panel">
+      <div class="card">
+        <h3 class="card-title">Resumen</h3>
+        <div class="summary-stats">
+          <div class="ss-item" *ngFor="let s of statuses">
+            <span class="status-chip" [ngClass]="getStatusClass(s)">{{ s }}</span>
+            <span class="ss-count">{{ appointments | countByStatus:s }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-16">
+        <h3 class="card-title">Total estimado</h3>
+        <p class="total-amount">S/ {{ appointments | sumByField:'totalEstimado' | number:'1.2-2' }}</p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,119 @@
+<div class="success-page">
+
+  <!-- Header -->
+  <header class="booking-header">
+    <div class="booking-header-inner">
+      <mat-icon class="brand-icon">content_cut</mat-icon>
+      <div>
+        <h1 class="brand-title">Sistema de Barbería</h1>
+      </div>
+    </div>
+  </header>
+
+  <div class="success-container">
+
+    <!-- Loading -->
+    <div class="loading-center" *ngIf="loading">
+      <mat-spinner diameter="48"></mat-spinner>
+    </div>
+
+    <!-- Error -->
+    <div class="error-state" *ngIf="error && !loading">
+      <mat-icon>error_outline</mat-icon>
+      <h2>No se encontró la cita</h2>
+      <p class="text-muted">El código ingresado no es válido o la cita ya no existe.</p>
+      <button mat-flat-button color="primary" (click)="nuevaCita()">Hacer una reserva</button>
+    </div>
+
+    <!-- Éxito -->
+    <ng-container *ngIf="!loading && !error && appointment">
+      <div class="success-icon-wrap">
+        <mat-icon class="success-icon">check_circle</mat-icon>
+      </div>
+
+      <h2 class="success-title">¡Cita confirmada!</h2>
+      <p class="success-sub text-muted">{{ appointment.message }}</p>
+
+      <!-- Código de cita -->
+      <div class="appointment-code">
+        <div class="code-label">Código de cita</div>
+        <div class="code-value">{{ appointment.appointmentCode }}</div>
+        <div class="code-hint text-muted text-sm">Guarda este código para consultar o cancelar tu cita</div>
+      </div>
+
+      <!-- Detalles -->
+      <div class="detail-card">
+        <div class="detail-row">
+          <mat-icon>person</mat-icon>
+          <div>
+            <div class="detail-label">Cliente</div>
+            <div class="detail-value">{{ appointment.customerName }}</div>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <mat-icon>face</mat-icon>
+          <div>
+            <div class="detail-label">Barbero</div>
+            <div class="detail-value">{{ appointment.workerName }}</div>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <mat-icon>event</mat-icon>
+          <div>
+            <div class="detail-label">Fecha</div>
+            <div class="detail-value">{{ appointment.appointmentDate }}</div>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <mat-icon>schedule</mat-icon>
+          <div>
+            <div class="detail-label">Horario</div>
+            <div class="detail-value">{{ appointment.startTime }} — {{ appointment.endTime }}</div>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="detail-row" *ngFor="let s of appointment.services">
+          <mat-icon>content_cut</mat-icon>
+          <div>
+            <div class="detail-label">{{ s.name }}</div>
+            <div class="detail-value">S/ {{ s.price | number:'1.2-2' }} · {{ s.durationMinutes }} min</div>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="detail-row total-row">
+          <mat-icon>attach_money</mat-icon>
+          <div>
+            <div class="detail-label">Total estimado</div>
+            <div class="detail-value total-value">S/ {{ appointment.estimatedTotal | number:'1.2-2' }}</div>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="detail-row">
+          <mat-icon>info</mat-icon>
+          <div>
+            <div class="detail-label">Estado</div>
+            <div class="detail-value">
+              <span class="status-chip pending">{{ appointment.status }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="success-actions">
+        <button mat-flat-button color="primary" (click)="nuevaCita()">
+          <mat-icon>add</mat-icon> Reservar otra cita
+        </button>
+      </div>
+    </ng-container>
+
+  </div>
+</div>

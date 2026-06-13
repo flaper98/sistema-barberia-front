@@ -1,0 +1,68 @@
+import { FinanceEntry } from '../../core/models/finance.model';
+
+const today = new Date().toISOString().split('T')[0];
+
+export const MOCK_FINANCE_ENTRIES: FinanceEntry[] = [
+  {
+    id: 1,
+    tipo: 'INGRESO',
+    categoria: 'VENTA',
+    descripcion: 'Venta del día - efectivo',
+    monto: 252.00,
+    fecha: today,
+    usuarioId: 4,
+    usuarioNombre: 'Sofía Vargas',
+    referencia: 'VENTAS-HOY',
+  },
+  {
+    id: 2,
+    tipo: 'EGRESO',
+    categoria: 'SUMINISTROS',
+    descripcion: 'Compra productos proveedor BeardCo',
+    monto: 180.00,
+    fecha: '2024-06-01',
+    usuarioId: 1,
+    usuarioNombre: 'Carlos Mendoza',
+    referencia: 'FAC-2024-0451',
+  },
+  {
+    id: 3,
+    tipo: 'EGRESO',
+    categoria: 'SERVICIOS',
+    descripcion: 'Pago de agua y luz',
+    monto: 95.00,
+    fecha: '2024-06-05',
+    usuarioId: 1,
+    usuarioNombre: 'Carlos Mendoza',
+  },
+  {
+    id: 4,
+    tipo: 'EGRESO',
+    categoria: 'SALARIO',
+    descripcion: 'Adelanto salario Miguel Torres',
+    monto: 300.00,
+    fecha: '2024-06-07',
+    usuarioId: 1,
+    usuarioNombre: 'Carlos Mendoza',
+  },
+  {
+    id: 5,
+    tipo: 'INGRESO',
+    categoria: 'VENTA',
+    descripcion: 'Ventas del día anterior',
+    monto: 173.00,
+    fecha: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+    usuarioId: 4,
+    usuarioNombre: 'Sofía Vargas',
+  },
+  {
+    id: 6,
+    tipo: 'EGRESO',
+    categoria: 'MANTENIMIENTO',
+    descripcion: 'Mantenimiento sillones',
+    monto: 120.00,
+    fecha: '2024-05-28',
+    usuarioId: 1,
+    usuarioNombre: 'Carlos Mendoza',
+  },
+];

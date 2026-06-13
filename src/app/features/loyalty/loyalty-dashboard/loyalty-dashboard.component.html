@@ -1,0 +1,65 @@
+<div class="page-container fade-in">
+  <div class="page-header">
+    <div><h1 class="page-title">Fidelización</h1><p class="page-subtitle">Programa de sellos y recompensas</p></div>
+  </div>
+
+  <mat-tab-group (selectedIndexChange)="onTabChange($event)" class="mb-24">
+    <mat-tab label="Todos los clientes"></mat-tab>
+    <mat-tab label="Con recompensas disponibles"></mat-tab>
+  </mat-tab-group>
+
+  <mat-form-field appearance="outline" class="search-field mb-16">
+    <mat-label>Buscar cliente</mat-label>
+    <input matInput [(ngModel)]="search" (ngModelChange)="applyFilter()">
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
+
+  <div *ngIf="loading" class="text-center"><mat-spinner diameter="40" style="margin:auto"></mat-spinner></div>
+
+  <div class="loyalty-grid" *ngIf="!loading">
+    <div class="loyalty-card card" *ngFor="let acc of filtered">
+      <div class="lc-header">
+        <div class="lc-avatar">{{ acc.clienteNombre[0] }}</div>
+        <div>
+          <div class="lc-name">{{ acc.clienteNombre }}</div>
+          <div class="text-muted text-sm">{{ acc.recompensasCanjeadas }} recompensa(s) canjeadas</div>
+        </div>
+        <div class="lc-rewards" *ngIf="acc.recompensasDisponibles > 0">
+          <mat-icon>card_giftcard</mat-icon>
+          <span>{{ acc.recompensasDisponibles }}</span>
+        </div>
+      </div>
+
+      <div class="stamps-container">
+        <div
+          *ngFor="let s of getStampArray(); let i = index"
+          class="stamp-dot"
+          [class.filled]="i < acc.sellosActuales">
+          <mat-icon>{{ i < acc.sellosActuales ? 'local_activity' : 'radio_button_unchecked' }}</mat-icon>
+        </div>
+        <span class="stamps-count">{{ acc.sellosActuales }}/{{ acc.sellosNecesarios }}</span>
+      </div>
+
+      <mat-progress-bar
+        mode="determinate"
+        [value]="(acc.sellosActuales / acc.sellosNecesarios) * 100"
+        color="accent"
+        class="mb-8">
+      </mat-progress-bar>
+
+      <div class="lc-footer" *ngIf="acc.recompensasDisponibles > 0">
+        <button mat-flat-button color="accent" (click)="redeem(acc)">
+          <mat-icon>redeem</mat-icon> Canjear recompensa
+        </button>
+      </div>
+      <div class="lc-footer text-muted text-sm" *ngIf="acc.recompensasDisponibles === 0">
+        Última actividad: {{ acc.ultimoMovimiento || '—' }}
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="!filtered.length">
+      <mat-icon>loyalty</mat-icon>
+      <p>{{ activeTab === 1 ? 'Sin recompensas pendientes' : 'Sin clientes' }}</p>
+    </div>
+  </div>
+</div>

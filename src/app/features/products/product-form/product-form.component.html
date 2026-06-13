@@ -1,0 +1,29 @@
+<div class="page-container fade-in">
+  <div class="page-header"><h1 class="page-title">{{ isEdit ? 'Editar producto' : 'Nuevo producto' }}</h1></div>
+  <div class="card" style="max-width:680px">
+    <div *ngIf="loading" class="text-center"><mat-spinner diameter="36" style="margin:auto"></mat-spinner></div>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="!loading">
+      <div class="form-row">
+        <mat-form-field appearance="outline"><mat-label>Nombre *</mat-label><input matInput formControlName="nombre"><mat-error>Requerido</mat-error></mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Categoría *</mat-label>
+          <mat-select formControlName="categoria">
+            <mat-option *ngFor="let c of categories" [value]="c">{{ c }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Precio de venta *</mat-label><input matInput type="number" formControlName="precioVenta" min="0"><span matPrefix>S/ </span></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Precio de compra *</mat-label><input matInput type="number" formControlName="precioCompra" min="0"><span matPrefix>S/ </span></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Stock actual *</mat-label><input matInput type="number" formControlName="stockActual" min="0"></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Stock mínimo *</mat-label><input matInput type="number" formControlName="stockMinimo" min="0"></mat-form-field>
+      </div>
+      <mat-form-field appearance="outline" class="w-full mt-8"><mat-label>Descripción</mat-label><textarea matInput formControlName="descripcion" rows="2"></textarea></mat-form-field>
+      <div class="form-actions">
+        <button mat-stroked-button type="button" (click)="cancel()">Cancelar</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="saving">
+          <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+          <span *ngIf="!saving">Guardar</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

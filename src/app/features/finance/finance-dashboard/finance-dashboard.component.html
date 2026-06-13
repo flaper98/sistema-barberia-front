@@ -1,0 +1,93 @@
+<div class="page-container fade-in">
+  <div class="page-header">
+    <div><h1 class="page-title">Finanzas</h1></div>
+    <button mat-flat-button color="primary" (click)="showForm = !showForm">
+      <mat-icon>{{ showForm ? 'close' : 'add' }}</mat-icon> {{ showForm ? 'Cancelar' : 'Nuevo registro' }}
+    </button>
+  </div>
+
+  <!-- Summary stats -->
+  <div class="stats-grid mb-24" *ngIf="summary && !loading">
+    <div class="stat-card success">
+      <div class="stat-icon success"><mat-icon>trending_up</mat-icon></div>
+      <div class="stat-info"><div class="stat-value">S/ {{ summary.totalIngresos | number:'1.2-2' }}</div><div class="stat-label">Total ingresos</div></div>
+    </div>
+    <div class="stat-card warn">
+      <div class="stat-icon warn"><mat-icon>trending_down</mat-icon></div>
+      <div class="stat-info"><div class="stat-value">S/ {{ summary.totalEgresos | number:'1.2-2' }}</div><div class="stat-label">Total egresos</div></div>
+    </div>
+    <div class="stat-card" [ngClass]="summary.utilidad >= 0 ? 'primary' : 'warn'">
+      <div class="stat-icon" [ngClass]="summary.utilidad >= 0 ? 'primary' : 'warn'"><mat-icon>account_balance</mat-icon></div>
+      <div class="stat-info"><div class="stat-value">S/ {{ summary.utilidad | number:'1.2-2' }}</div><div class="stat-label">Utilidad</div></div>
+    </div>
+  </div>
+
+  <!-- New entry form -->
+  <div class="card mb-24" *ngIf="showForm">
+    <h3 class="font-medium mb-16">Nuevo registro</h3>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo *</mat-label>
+          <mat-select formControlName="tipo">
+            <mat-option value="INGRESO">Ingreso</mat-option>
+            <mat-option value="EGRESO">Egreso</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Categoría *</mat-label>
+          <mat-select formControlName="categoria">
+            <mat-option *ngFor="let c of categories" [value]="c">{{ c }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Monto *</mat-label>
+          <input matInput type="number" formControlName="monto" min="0"><span matPrefix>S/ </span>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha *</mat-label>
+          <input matInput [matDatepicker]="dp" formControlName="fecha">
+          <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
+          <mat-datepicker #dp></mat-datepicker>
+        </mat-form-field>
+        <mat-form-field appearance="outline" style="grid-column:span 2">
+          <mat-label>Descripción *</mat-label>
+          <input matInput formControlName="descripcion">
+        </mat-form-field>
+      </div>
+      <div class="form-actions">
+        <button mat-flat-button color="primary" type="submit" [disabled]="saving">
+          <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+          <span *ngIf="!saving">Guardar registro</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Entries list -->
+  <div class="card">
+    <mat-tab-group [(selectedIndex)]="activeTab">
+      <mat-tab label="Todos"></mat-tab>
+      <mat-tab label="Ingresos"></mat-tab>
+      <mat-tab label="Egresos"></mat-tab>
+    </mat-tab-group>
+
+    <div *ngIf="loading" class="text-center mt-24"><mat-spinner diameter="40" style="margin:auto"></mat-spinner></div>
+
+    <div class="entries-list mt-16" *ngIf="!loading">
+      <div *ngIf="!filteredEntries.length" class="text-center text-muted" style="padding:24px">Sin registros</div>
+      <div class="entry-item" *ngFor="let e of filteredEntries">
+        <div class="entry-type" [ngClass]="e.tipo === 'INGRESO' ? 'ingreso' : 'egreso'">
+          <mat-icon>{{ e.tipo === 'INGRESO' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+        </div>
+        <div class="entry-info">
+          <div class="font-medium">{{ e.descripcion }}</div>
+          <div class="text-muted text-sm">{{ e.categoria }} · {{ e.fecha }} · {{ e.usuarioNombre }}</div>
+        </div>
+        <div class="entry-amount" [ngClass]="e.tipo === 'INGRESO' ? 'ingreso' : 'egreso'">
+          {{ e.tipo === 'INGRESO' ? '+' : '-' }} S/ {{ e.monto | number:'1.2-2' }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

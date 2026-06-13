@@ -1,0 +1,39 @@
+<mat-toolbar class="navbar">
+  <!-- Menu toggle -->
+  <button mat-icon-button (click)="menuToggle.emit()" class="menu-btn">
+    <mat-icon>menu</mat-icon>
+  </button>
+
+  <!-- Page title -->
+  <span class="page-title">{{ pageTitle }}</span>
+
+  <span class="spacer"></span>
+
+  <!-- Quick sale button -->
+  <button mat-flat-button color="accent" class="quick-sale-btn" (click)="navigateToQuickSale()">
+    <mat-icon>add_shopping_cart</mat-icon>
+    <span class="btn-text">Venta rápida</span>
+  </button>
+
+  <!-- User menu -->
+  <button mat-icon-button [matMenuTriggerFor]="userMenu" class="user-btn">
+    <div class="navbar-avatar" *ngIf="currentUser">
+      {{ currentUser.avatar || (currentUser.nombre[0] + currentUser.apellido[0]) }}
+    </div>
+  </button>
+
+  <mat-menu #userMenu="matMenu" xPosition="before">
+    <div class="user-menu-header" *ngIf="currentUser">
+      <strong>{{ currentUser.nombre }} {{ currentUser.apellido }}</strong>
+      <small>{{ currentUser.email }}</small>
+      <span class="role-chip">{{ currentUser.rol }}</span>
+    </div>
+    <mat-divider></mat-divider>
+    <button mat-menu-item routerLink="/settings" *ngIf="authService.hasRole(['ADMIN'])">
+      <mat-icon>settings</mat-icon> Configuración
+    </button>
+    <button mat-menu-item (click)="logout()">
+      <mat-icon>logout</mat-icon> Cerrar sesión
+    </button>
+  </mat-menu>
+</mat-toolbar>

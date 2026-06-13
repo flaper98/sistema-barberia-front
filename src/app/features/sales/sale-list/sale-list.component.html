@@ -1,0 +1,67 @@
+<div class="page-container fade-in">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Historial de Ventas</h1>
+      <p class="page-subtitle">Registro completo de todas las ventas</p>
+    </div>
+    <button mat-flat-button color="primary" routerLink="/sales/quick">
+      <mat-icon>add</mat-icon> Nueva venta
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="flex items-center gap-16 mb-16">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Buscar venta</mat-label>
+        <input matInput (keyup)="applyFilter($event)" placeholder="Barbero, cliente...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+    </div>
+
+    <div *ngIf="loading" class="text-center mt-24"><mat-spinner diameter="40" style="margin:auto"></mat-spinner></div>
+
+    <table mat-table [dataSource]="dataSource" matSort *ngIf="!loading">
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>#</th>
+        <td mat-cell *matCellDef="let s">{{ s.id }}</td>
+      </ng-container>
+      <ng-container matColumnDef="fecha">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha</th>
+        <td mat-cell *matCellDef="let s">{{ s.fecha }}</td>
+      </ng-container>
+      <ng-container matColumnDef="clienteNombre">
+        <th mat-header-cell *matHeaderCellDef>Cliente</th>
+        <td mat-cell *matCellDef="let s">{{ s.clienteNombre || 'Sin cliente' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="barberoNombre">
+        <th mat-header-cell *matHeaderCellDef>Barbero</th>
+        <td mat-cell *matCellDef="let s">{{ s.barberoNombre }}</td>
+      </ng-container>
+      <ng-container matColumnDef="tipoVenta">
+        <th mat-header-cell *matHeaderCellDef>Tipo</th>
+        <td mat-cell *matCellDef="let s"><span class="status-chip confirmada">{{ s.tipoVenta }}</span></td>
+      </ng-container>
+      <ng-container matColumnDef="total">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Total</th>
+        <td mat-cell *matCellDef="let s"><strong>S/ {{ s.total | number:'1.2-2' }}</strong></td>
+      </ng-container>
+      <ng-container matColumnDef="metodoPago">
+        <th mat-header-cell *matHeaderCellDef>Pago</th>
+        <td mat-cell *matCellDef="let s">{{ s.metodoPago }}</td>
+      </ng-container>
+      <ng-container matColumnDef="estado">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let s">
+          <span class="status-chip" [ngClass]="s.estado.toLowerCase()">{{ s.estado }}</span>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell text-center text-muted" [attr.colspan]="displayedColumns.length">Sin resultados</td>
+      </tr>
+    </table>
+
+    <mat-paginator [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons *ngIf="!loading"></mat-paginator>
+  </div>
+</div>

@@ -1,0 +1,64 @@
+<div class="page-container fade-in">
+  <div class="page-header"><h1 class="page-title">Configuración</h1></div>
+
+  <div class="settings-grid">
+    <!-- Barbery info -->
+    <div class="card">
+      <h3 class="settings-title"><mat-icon>store</mat-icon> Datos de la barbería</h3>
+      <form [formGroup]="barberyForm" (ngSubmit)="saveBarbery()">
+        <div class="form-row">
+          <mat-form-field appearance="outline" style="grid-column:span 2"><mat-label>Nombre</mat-label><input matInput formControlName="nombre"></mat-form-field>
+          <mat-form-field appearance="outline" style="grid-column:span 2"><mat-label>Dirección</mat-label><input matInput formControlName="direccion"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Teléfono</mat-label><input matInput formControlName="telefono"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Email</mat-label><input matInput formControlName="email"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>RUC</mat-label><input matInput formControlName="ruc"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Horario</mat-label><input matInput formControlName="horario"></mat-form-field>
+        </div>
+        <div class="form-actions">
+          <button mat-flat-button color="primary" type="submit" [disabled]="saving">
+            <mat-spinner diameter="16" *ngIf="saving"></mat-spinner>
+            <span *ngIf="!saving">Guardar</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Payment methods -->
+    <div class="card">
+      <h3 class="settings-title"><mat-icon>payments</mat-icon> Métodos de pago</h3>
+      <div class="payment-list">
+        <div class="pm-item" *ngFor="let pm of paymentMethods">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ pm }}</span>
+        </div>
+      </div>
+      <p class="text-muted text-sm mt-8">Para modificar los métodos de pago, contáctese con soporte técnico.</p>
+    </div>
+
+    <!-- Roles -->
+    <div class="card">
+      <h3 class="settings-title"><mat-icon>manage_accounts</mat-icon> Roles del sistema</h3>
+      <div class="roles-list">
+        <div class="role-item" *ngFor="let r of roles">
+          <div class="role-badge">{{ r.nombre }}</div>
+          <div class="text-muted text-sm">{{ r.descripcion }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loyalty config -->
+    <div class="card" *ngIf="loyaltyForm">
+      <h3 class="settings-title"><mat-icon>loyalty</mat-icon> Configuración fidelización</h3>
+      <form [formGroup]="loyaltyForm" (ngSubmit)="saveLoyalty()">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Sellos necesarios para recompensa</mat-label>
+          <input matInput type="number" formControlName="sellosNecesarios" min="1">
+          <mat-hint>Actualmente: {{ loyaltyForm.get('sellosNecesarios')?.value }} sellos</mat-hint>
+        </mat-form-field>
+        <div class="form-actions">
+          <button mat-flat-button color="accent" type="submit">Actualizar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

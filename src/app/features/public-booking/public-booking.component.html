@@ -1,0 +1,549 @@
+<div class="booking-page">
+  <!-- Header público -->
+  <header class="booking-header">
+    <div class="booking-header-inner">
+      <div class="brand-badge">
+        <mat-icon>content_cut</mat-icon>
+      </div>
+
+      <div class="brand-copy">
+        <span class="brand-kicker">Reserva online</span>
+        <h1 class="brand-title">Reserva tu cita</h1>
+        <p class="brand-sub">
+          Elige tu servicio, horario y confirma en pocos pasos.
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Loading inicial -->
+  <div class="loading-center page-loader" *ngIf="loadingInitial">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p class="mt-16 text-muted">Cargando servicios disponibles...</p>
+  </div>
+
+  <!-- Contenedor principal -->
+  <main class="booking-container" *ngIf="!loadingInitial">
+    <section class="booking-card">
+      <div class="booking-intro">
+        <div>
+          <h2>Agenda rápida</h2>
+          <p>Completa tus datos y separa tu turno sin registrarte.</p>
+        </div>
+
+        <div class="booking-chip">
+          <mat-icon>bolt</mat-icon>
+          Menos de 1 minuto
+        </div>
+      </div>
+
+      <mat-stepper
+        #stepper
+        linear="false"
+        animationDuration="300ms"
+        class="booking-stepper"
+      >
+        <!-- PASO 1 -->
+        <mat-step [stepControl]="serviceForm" label="Servicios">
+          <div class="step-content">
+            <div class="step-heading">
+              <span class="step-count">Paso 1 de 5</span>
+              <h2 class="step-title">¿Qué servicio necesitas?</h2>
+              <p class="step-sub">
+                Selecciona uno o más servicios para calcular duración y precio.
+              </p>
+            </div>
+
+            <div class="empty-state" *ngIf="services?.length === 0">
+              <mat-icon>content_cut</mat-icon>
+              <h3>No hay servicios disponibles</h3>
+              <p>Intenta nuevamente más tarde.</p>
+            </div>
+
+            <div class="services-grid" *ngIf="services?.length">
+              <button
+                type="button"
+                class="service-card"
+                [class.selected]="isServiceSelected(s)"
+                *ngFor="let s of services"
+                (click)="toggleService(s)"
+              >
+                <div class="service-card-header">
+                  <div class="service-icon-wrap">
+                    <mat-icon class="service-icon">
+                      {{
+                        s.categoria === "CORTE"
+                          ? "content_cut"
+                          : s.categoria === "BARBA"
+                            ? "face"
+                            : s.categoria === "COLOR"
+                              ? "palette"
+                              : "spa"
+                      }}
+                    </mat-icon>
+                  </div>
+
+                  <mat-icon class="check-icon" *ngIf="isServiceSelected(s)"
+                    >check_circle</mat-icon
+                  >
+                </div>
+
+                <div class="service-name">{{ s.nombre }}</div>
+
+                <div class="service-meta">
+                  <span class="service-price"
+                    >S/ {{ s.precio | number: "1.2-2" }}</span
+                  >
+                  <span class="service-duration">
+                    <mat-icon>schedule</mat-icon>
+                    {{ s.duracionMinutos }} min
+                  </span>
+                </div>
+
+                <p class="service-desc" *ngIf="s.descripcion">
+                  {{ s.descripcion }}
+                </p>
+              </button>
+            </div>
+
+            <div class="selection-summary" *ngIf="selectedServices.length > 0">
+              <div class="summary-left">
+                <mat-icon>shopping_cart</mat-icon>
+                <span
+                  >{{ selectedServices.length }} servicio(s)
+                  seleccionado(s)</span
+                >
+              </div>
+              <strong
+                >{{ duracionTotal }} min · S/
+                {{ totalEstimado | number: "1.2-2" }}</strong
+              >
+            </div>
+
+            <div class="step-actions single">
+              <button
+                mat-flat-button
+                color="primary"
+                [disabled]="!canGoToStep2()"
+                (click)="goToStep2()"
+              >
+                Siguiente
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-step>
+
+        <!-- PASO 2 -->
+        <mat-step [stepControl]="workerForm" label="Barbero">
+          <div class="step-content">
+            <div class="step-heading">
+              <span class="step-count">Paso 2 de 5</span>
+              <h2 class="step-title">Elige tu barbero</h2>
+              <p class="step-sub">
+                Puedes elegir uno o dejar que asignemos el primero disponible.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="worker-card any-worker"
+              [class.selected]="anyWorker"
+              (click)="selectAnyWorker()"
+            >
+              <div class="worker-avatar auto">
+                <mat-icon>shuffle</mat-icon>
+              </div>
+
+              <div class="worker-info">
+                <div class="worker-name">Cualquier barbero disponible</div>
+                <div class="worker-detail">
+                  Recomendado para conseguir horario más rápido.
+                </div>
+              </div>
+
+              <mat-icon class="check-icon" *ngIf="anyWorker"
+                >check_circle</mat-icon
+              >
+            </button>
+
+            <div class="workers-list">
+              <button
+                type="button"
+                class="worker-card"
+                [class.selected]="isWorkerSelected(w)"
+                *ngFor="let w of workers"
+                (click)="selectWorker(w)"
+              >
+                <div class="worker-avatar">
+                  <img *ngIf="w.avatar" [src]="w.avatar" [alt]="w.nombre" />
+                  <span *ngIf="!w.avatar"
+                    >{{ w.nombre?.charAt(0) }}{{ w.apellido?.charAt(0) }}</span
+                  >
+                </div>
+
+                <div class="worker-info">
+                  <div class="worker-name">{{ w.nombre }} {{ w.apellido }}</div>
+                  <div class="worker-detail">
+                    {{ w.especialidad || "Barbero profesional" }}
+                  </div>
+                </div>
+
+                <mat-icon class="check-icon" *ngIf="isWorkerSelected(w)"
+                  >check_circle</mat-icon
+                >
+              </button>
+            </div>
+
+            <div class="step-actions">
+              <button mat-stroked-button matStepperPrevious>
+                <mat-icon>arrow_back</mat-icon>
+                Anterior
+              </button>
+
+              <button
+                mat-flat-button
+                color="primary"
+                [disabled]="!canGoToStep3()"
+                (click)="goToStep3()"
+              >
+                Siguiente
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-step>
+
+        <!-- PASO 3 -->
+        <mat-step [stepControl]="dateForm" label="Fecha y hora">
+          <div class="step-content">
+            <div class="step-heading">
+              <span class="step-count">Paso 3 de 5</span>
+              <h2 class="step-title">Selecciona fecha y hora</h2>
+              <p class="step-sub">
+                Te mostraremos solo los horarios disponibles.
+              </p>
+            </div>
+
+            <div class="mini-resume" *ngIf="selectedServices.length">
+              <mat-icon>content_cut</mat-icon>
+              <span
+                >{{ selectedServices.length }} servicio(s) ·
+                {{ duracionTotal }} min · S/
+                {{ totalEstimado | number: "1.2-2" }}</span
+              >
+            </div>
+
+            <form [formGroup]="dateForm">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Selecciona la fecha</mat-label>
+                <input
+                  matInput
+                  [matDatepicker]="picker"
+                  [min]="minDate"
+                  formControlName="fecha"
+                  (dateChange)="onDateChange()"
+                  readonly
+                />
+                <mat-datepicker-toggle
+                  matSuffix
+                  [for]="picker"
+                ></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+              </mat-form-field>
+            </form>
+
+            <div
+              class="loading-center availability-loader"
+              *ngIf="loadingAvailability"
+            >
+              <mat-spinner diameter="36"></mat-spinner>
+              <p>Consultando horarios disponibles...</p>
+            </div>
+
+            <ng-container *ngIf="!loadingAvailability && availability">
+              <ng-container *ngFor="let ws of allWorkerSlots">
+                <div class="worker-slots-section" *ngIf="ws.slots.length > 0">
+                  <div class="worker-slots-label">
+                    <mat-icon>person</mat-icon>
+                    <span>{{ ws.workerName }}</span>
+                  </div>
+
+                  <div class="slots-grid">
+                    <button
+                      class="slot-btn"
+                      [class.selected]="isSlotSelected(slot, ws.workerId)"
+                      *ngFor="let slot of ws.slots"
+                      (click)="selectSlot(slot, ws.workerId)"
+                      type="button"
+                    >
+                      {{ slot.startTime }}
+                    </button>
+                  </div>
+                </div>
+              </ng-container>
+
+              <div class="empty-state" *ngIf="noSlotsAvailable">
+                <mat-icon>event_busy</mat-icon>
+                <h3>Sin horarios disponibles</h3>
+                <p>
+                  Prueba con otra fecha o selecciona cualquier barbero
+                  disponible.
+                </p>
+              </div>
+            </ng-container>
+
+            <div class="selection-summary" *ngIf="selectedSlot">
+              <div class="summary-left">
+                <mat-icon>schedule</mat-icon>
+                <span>Horario seleccionado</span>
+              </div>
+              <strong
+                >{{ selectedSlot.startTime }} —
+                {{ selectedSlot.endTime }}</strong
+              >
+            </div>
+
+            <div class="step-actions">
+              <button mat-stroked-button matStepperPrevious>
+                <mat-icon>arrow_back</mat-icon>
+                Anterior
+              </button>
+
+              <button
+                mat-flat-button
+                color="primary"
+                [disabled]="!canGoToStep4()"
+                (click)="goToStep4()"
+              >
+                Siguiente
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-step>
+
+        <!-- PASO 4 -->
+        <mat-step label="Tus datos">
+          <div class="step-content">
+            <div class="step-heading">
+              <span class="step-count">Paso 4 de 5</span>
+              <h2 class="step-title">Tus datos</h2>
+              <p class="step-sub">
+                Solo necesitamos lo básico para confirmar tu cita.
+              </p>
+            </div>
+
+            <form [formGroup]="customerForm" class="customer-form">
+              <div class="form-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Nombre *</mat-label>
+                  <input
+                    matInput
+                    formControlName="nombre"
+                    placeholder="Carlos"
+                  />
+                  <mat-error>{{
+                    fieldError(customerForm, "nombre")
+                  }}</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Apellido *</mat-label>
+                  <input
+                    matInput
+                    formControlName="apellido"
+                    placeholder="Pérez"
+                  />
+                  <mat-error>{{
+                    fieldError(customerForm, "apellido")
+                  }}</mat-error>
+                </mat-form-field>
+              </div>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Teléfono *</mat-label>
+                <input
+                  matInput
+                  formControlName="telefono"
+                  placeholder="999888777"
+                  type="tel"
+                />
+                <mat-icon matSuffix>phone</mat-icon>
+                <mat-error>{{
+                  fieldError(customerForm, "telefono")
+                }}</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Correo electrónico opcional</mat-label>
+                <input
+                  matInput
+                  formControlName="correo"
+                  placeholder="carlos@email.com"
+                  type="email"
+                />
+                <mat-icon matSuffix>email</mat-icon>
+                <mat-error>{{ fieldError(customerForm, "correo") }}</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Notas adicionales opcionales</mat-label>
+                <textarea
+                  matInput
+                  formControlName="notas"
+                  rows="3"
+                  placeholder="Ej: corte degradado, sin barba..."
+                ></textarea>
+                <mat-hint align="end"
+                  >{{
+                    customerForm.get("notas")?.value?.length ?? 0
+                  }}/300</mat-hint
+                >
+                <mat-error>{{ fieldError(customerForm, "notas") }}</mat-error>
+              </mat-form-field>
+            </form>
+
+            <div class="step-actions">
+              <button mat-stroked-button matStepperPrevious>
+                <mat-icon>arrow_back</mat-icon>
+                Anterior
+              </button>
+
+              <button
+                mat-flat-button
+                color="primary"
+                [disabled]="customerForm.invalid"
+                (click)="goToStep5()"
+              >
+                Revisar cita
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-step>
+
+        <!-- PASO 5 -->
+        <mat-step label="Confirmar">
+          <div class="step-content">
+            <div class="step-heading">
+              <span class="step-count">Paso 5 de 5</span>
+              <h2 class="step-title">Confirma tu cita</h2>
+              <p class="step-sub">
+                Revisa que todo esté correcto antes de confirmar.
+              </p>
+            </div>
+
+            <div class="summary-card">
+              <div class="summary-section-title">Detalles de la cita</div>
+
+              <div class="summary-row">
+                <mat-icon>event</mat-icon>
+                <div>
+                  <div class="summary-label">Fecha</div>
+                  <div class="summary-value">
+                    {{ selectedDateFormatted | titlecase }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="summary-row">
+                <mat-icon>schedule</mat-icon>
+                <div>
+                  <div class="summary-label">Horario</div>
+                  <div class="summary-value" *ngIf="selectedSlot">
+                    {{ selectedSlot.startTime }} — {{ selectedSlot.endTime }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="summary-row">
+                <mat-icon>person</mat-icon>
+                <div>
+                  <div class="summary-label">Barbero</div>
+                  <div class="summary-value">{{ selectedWorkerName }}</div>
+                </div>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <div class="summary-section-title">Servicios</div>
+
+              <div class="summary-row" *ngFor="let s of selectedServices">
+                <mat-icon>content_cut</mat-icon>
+                <div>
+                  <div class="summary-label">{{ s.nombre }}</div>
+                  <div class="summary-value">
+                    S/ {{ s.precio | number: "1.2-2" }} ·
+                    {{ s.duracionMinutos }} min
+                  </div>
+                </div>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <div class="summary-row total-row">
+                <mat-icon>payments</mat-icon>
+                <div>
+                  <div class="summary-label">Total estimado</div>
+                  <div class="summary-value total-value">
+                    S/ {{ totalEstimado | number: "1.2-2" }}
+                  </div>
+                </div>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <div class="summary-section-title">Cliente</div>
+
+              <div class="summary-row">
+                <mat-icon>account_circle</mat-icon>
+                <div>
+                  <div class="summary-label">
+                    {{ customerForm.value.nombre }}
+                    {{ customerForm.value.apellido }}
+                  </div>
+                  <div class="summary-value">
+                    {{ customerForm.value.telefono }}
+                  </div>
+                  <div
+                    class="text-muted text-sm"
+                    *ngIf="customerForm.value.correo"
+                  >
+                    {{ customerForm.value.correo }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="step-actions">
+              <button
+                mat-stroked-button
+                matStepperPrevious
+                [disabled]="submitting"
+              >
+                <mat-icon>arrow_back</mat-icon>
+                Editar
+              </button>
+
+              <button
+                mat-flat-button
+                color="primary"
+                class="confirm-btn"
+                [disabled]="submitting"
+                (click)="confirmar()"
+              >
+                <mat-spinner diameter="20" *ngIf="submitting"></mat-spinner>
+
+                <ng-container *ngIf="!submitting">
+                  <mat-icon>check_circle</mat-icon>
+                  Confirmar cita
+                </ng-container>
+              </button>
+            </div>
+          </div>
+        </mat-step>
+      </mat-stepper>
+    </section>
+  </main>
+</div>

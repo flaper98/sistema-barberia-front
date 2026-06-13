@@ -1,0 +1,158 @@
+<div class="page-container fade-in">
+
+  <!-- Loading -->
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p class="text-muted mt-16">Cargando dashboard...</p>
+  </div>
+
+  <ng-container *ngIf="!loading && stats">
+
+    <!-- Greeting -->
+    <div class="dashboard-greeting mb-24">
+      <div>
+        <h2 class="greeting-title">{{ greeting }}, {{ authService.currentUser?.nombre }} 👋</h2>
+        <p class="text-muted">{{ today | titlecase }}</p>
+      </div>
+      <button mat-flat-button color="primary" routerLink="/sales/quick">
+        <mat-icon>add_shopping_cart</mat-icon>
+        Nueva venta
+      </button>
+    </div>
+
+    <!-- Stats cards -->
+    <div class="stats-grid mb-24">
+      <div class="stat-card primary">
+        <div class="stat-icon primary"><mat-icon>point_of_sale</mat-icon></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ stats.ventasHoy }}</div>
+          <div class="stat-label">Ventas del día</div>
+        </div>
+      </div>
+
+      <div class="stat-card accent">
+        <div class="stat-icon accent"><mat-icon>attach_money</mat-icon></div>
+        <div class="stat-info">
+          <div class="stat-value">S/ {{ stats.ingresosHoy | number:'1.2-2' }}</div>
+          <div class="stat-label">Ingresos del día</div>
+        </div>
+      </div>
+
+      <div class="stat-card success">
+        <div class="stat-icon success"><mat-icon>calendar_today</mat-icon></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ stats.citasHoy }}</div>
+          <div class="stat-label">Citas del día</div>
+        </div>
+      </div>
+
+      <div class="stat-card primary">
+        <div class="stat-icon primary"><mat-icon>people</mat-icon></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ stats.clientesAtendidos }}</div>
+          <div class="stat-label">Clientes atendidos</div>
+        </div>
+      </div>
+
+      <div class="stat-card warn" *ngIf="stats.productosStockBajo > 0">
+        <div class="stat-icon warn"><mat-icon>warning</mat-icon></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ stats.productosStockBajo }}</div>
+          <div class="stat-label">Productos stock bajo</div>
+        </div>
+      </div>
+
+      <div class="stat-card success">
+        <div class="stat-icon success"><mat-icon>emoji_events</mat-icon></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ stats.barberoTopNombre }}</div>
+          <div class="stat-label">Top barbero · S/ {{ stats.barberoTopMonto | number:'1.2-2' }}</div>
+        </div>
+      </div>
+
+      <div class="stat-card accent" *ngIf="stats.recompensasPendientes > 0">
+        <div class="stat-icon accent"><mat-icon>loyalty</mat-icon></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ stats.recompensasPendientes }}</div>
+          <div class="stat-label">Recompensas pendientes</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content grid -->
+    <div class="dashboard-grid">
+
+      <!-- Ventas semana (bar chart simple) -->
+      <div class="card" *ngIf="chartData">
+        <h3 class="card-title">Ventas últimos 7 días</h3>
+        <div class="bar-chart">
+          <div class="bar-item" *ngFor="let v of chartData.ventasSemana">
+            <div class="bar-wrapper">
+              <span class="bar-value" *ngIf="v.monto > 0">S/{{ v.monto | number:'1.0-0' }}</span>
+              <div class="bar-fill" [style.height.%]="getBarWidth(v.monto)"></div>
+            </div>
+            <span class="bar-label">{{ v.dia }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Citas de hoy -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Citas de hoy</h3>
+          <a routerLink="/appointments" mat-button color="primary" class="text-sm">Ver todas</a>
+        </div>
+        <div *ngIf="todayAppointments.length === 0" class="empty-state">
+          <mat-icon>event_available</mat-icon>
+          <p>Sin citas para hoy</p>
+        </div>
+        <div class="appointment-list" *ngIf="todayAppointments.length > 0">
+          <div class="appt-item" *ngFor="let a of todayAppointments">
+            <div class="appt-time">{{ a.hora }}</div>
+            <div class="appt-info">
+              <div class="appt-client">{{ a.clienteNombre }}</div>
+              <div class="appt-worker text-muted text-sm">{{ a.barberoNombre }}</div>
+            </div>
+            <span class="status-chip" [ngClass]="getStatusClass(a.estado)">{{ a.estado }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Servicios más vendidos -->
+      <div class="card" *ngIf="chartData">
+        <h3 class="card-title">Servicios más vendidos</h3>
+        <div *ngIf="chartData.serviciosMasVendidos.length === 0" class="empty-state">
+          <mat-icon>spa</mat-icon>
+          <p>Sin datos aún</p>
+        </div>
+        <div class="top-services">
+          <div class="service-item" *ngFor="let s of chartData.serviciosMasVendidos; let i = index">
+            <span class="service-rank">{{ i + 1 }}</span>
+            <span class="service-name">{{ s.nombre }}</span>
+            <span class="service-count">{{ s.cantidad }}x</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stock bajo -->
+      <div class="card warn-border" *ngIf="lowStockProducts.length > 0">
+        <div class="card-header">
+          <h3 class="card-title">
+            <mat-icon class="warn-icon">warning</mat-icon>
+            Productos con stock bajo
+          </h3>
+          <a routerLink="/inventory" mat-button color="warn" class="text-sm">Ver inventario</a>
+        </div>
+        <div class="low-stock-list">
+          <div class="ls-item" *ngFor="let p of lowStockProducts">
+            <div class="ls-name">{{ p.nombre }}</div>
+            <div class="ls-stock">
+              <span class="status-chip low-stock">{{ p.stockActual }} / {{ p.stockMinimo }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </ng-container>
+</div>

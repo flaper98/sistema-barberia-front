@@ -1,0 +1,55 @@
+<div class="page-container fade-in">
+  <div class="page-header"><h1 class="page-title">Reportes</h1><p class="page-subtitle">Resumen general del negocio</p></div>
+
+  <div *ngIf="loading" class="text-center mt-24"><mat-spinner diameter="48" style="margin:auto"></mat-spinner></div>
+
+  <ng-container *ngIf="!loading">
+    <!-- KPIs -->
+    <div class="stats-grid mb-24">
+      <div class="stat-card primary"><div class="stat-icon primary"><mat-icon>receipt</mat-icon></div><div class="stat-info"><div class="stat-value">{{ totalVentas }}</div><div class="stat-label">Total ventas</div></div></div>
+      <div class="stat-card accent"><div class="stat-icon accent"><mat-icon>payments</mat-icon></div><div class="stat-info"><div class="stat-value">S/ {{ totalIngresos | number:'1.2-2' }}</div><div class="stat-label">Total ingresos</div></div></div>
+      <div class="stat-card success"><div class="stat-icon success"><mat-icon>event_available</mat-icon></div><div class="stat-info"><div class="stat-value">{{ citasAtendidas }}</div><div class="stat-label">Citas atendidas</div></div></div>
+      <div class="stat-card warn"><div class="stat-icon warn"><mat-icon>event_busy</mat-icon></div><div class="stat-info"><div class="stat-value">{{ citasCanceladas }}</div><div class="stat-label">Citas canceladas</div></div></div>
+    </div>
+
+    <div class="reports-grid">
+      <!-- Ingresos por barbero -->
+      <div class="card">
+        <h3 class="card-title-rpt"><mat-icon>content_cut</mat-icon> Ingresos por barbero</h3>
+        <div *ngFor="let w of workerReports; let i = index" class="rpt-row">
+          <span class="rpt-rank">{{ i+1 }}</span>
+          <div class="rpt-info">
+            <div class="font-medium">{{ w.nombre }}</div>
+            <div class="text-muted text-sm">{{ w.ventas }} venta(s) · Comisión: S/ {{ w.comision | number:'1.2-2' }}</div>
+          </div>
+          <strong>S/ {{ w.total | number:'1.2-2' }}</strong>
+        </div>
+        <div class="empty-msg" *ngIf="!workerReports.length">Sin datos</div>
+      </div>
+
+      <!-- Servicios más vendidos -->
+      <div class="card">
+        <h3 class="card-title-rpt"><mat-icon>spa</mat-icon> Servicios más vendidos</h3>
+        <div *ngFor="let s of serviceReports; let i = index" class="rpt-row">
+          <span class="rpt-rank">{{ i+1 }}</span>
+          <div class="rpt-info">
+            <div class="font-medium">{{ s.nombre }}</div>
+            <div class="text-muted text-sm">{{ s.cantidad }} unidades</div>
+          </div>
+          <strong>S/ {{ s.total | number:'1.2-2' }}</strong>
+        </div>
+        <div class="empty-msg" *ngIf="!serviceReports.length">Sin datos</div>
+      </div>
+
+      <!-- Stock bajo -->
+      <div class="card" *ngIf="lowStock.length > 0">
+        <h3 class="card-title-rpt warn-color"><mat-icon>warning</mat-icon> Productos con stock bajo</h3>
+        <div *ngFor="let p of lowStock" class="rpt-row">
+          <mat-icon class="warn-color">inventory_2</mat-icon>
+          <div class="rpt-info flex-1"><div class="font-medium">{{ p.nombre }}</div><div class="text-muted text-sm">{{ p.categoria }}</div></div>
+          <span class="status-chip low-stock">Stock: {{ p.stockActual }} / mín {{ p.stockMinimo }}</span>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

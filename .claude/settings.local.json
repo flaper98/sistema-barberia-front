@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(npm run *)",
+      "Read(//d/wks/flaper-solutions-ti/Proyectos/sistema-barberia/back-end/**)",
+      "Bash(mvn compile *)",
+      "Bash(ls -la \"d:\\\\wks\\\\flaper-solutions-ti\\\\Proyectos\\\\sistema-barberia\\\\\")",
+      "Read(//d/wks/flaper-solutions-ti/Proyectos/**)",
+      "Bash(grep -E \"\\(Request|Response\\)\\\\.java$\")"
+    ]
+  }
+}

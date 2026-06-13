@@ -1,0 +1,38 @@
+<div class="page-container fade-in">
+  <div class="page-header">
+    <div><h1 class="page-title">Barberos</h1><p class="page-subtitle">{{ workers.length }} trabajadores registrados</p></div>
+    <button mat-flat-button color="primary" routerLink="/workers/new"><mat-icon>person_add</mat-icon> Nuevo barbero</button>
+  </div>
+
+  <mat-form-field appearance="outline" class="search-field mb-16">
+    <mat-label>Buscar</mat-label>
+    <input matInput [(ngModel)]="search" (ngModelChange)="applyFilter()" placeholder="Nombre, especialidad...">
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
+
+  <div *ngIf="loading" class="text-center"><mat-spinner diameter="40" style="margin:auto"></mat-spinner></div>
+
+  <div class="workers-grid" *ngIf="!loading">
+    <div class="worker-card card" *ngFor="let w of filtered">
+      <div class="wc-header">
+        <div class="wc-avatar">{{ w.avatar || (w.nombre[0] + w.apellido[0]) }}</div>
+        <div>
+          <h3 class="wc-name">{{ w.nombre }} {{ w.apellido }}</h3>
+          <span class="status-chip" [ngClass]="w.estado ? 'active' : 'inactive'">{{ w.estado ? 'Activo' : 'Inactivo' }}</span>
+        </div>
+      </div>
+      <p class="text-muted text-sm">{{ w.especialidad }}</p>
+      <div class="wc-stats">
+        <div class="ws-item"><span class="ws-label">Servicios</span><strong>{{ w.serviciosRealizados }}</strong></div>
+        <div class="ws-item"><span class="ws-label">Generado</span><strong>S/ {{ w.totalGenerado | number:'1.0-0' }}</strong></div>
+        <div class="ws-item"><span class="ws-label">Comisión</span><strong>{{ w.porcentajeComision }}%</strong></div>
+      </div>
+      <div class="wc-actions">
+        <button mat-stroked-button [routerLink]="['/workers', w.id]"><mat-icon>edit</mat-icon> Editar</button>
+        <button mat-icon-button (click)="toggleStatus(w)" [matTooltip]="w.estado ? 'Desactivar' : 'Activar'">
+          <mat-icon>{{ w.estado ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

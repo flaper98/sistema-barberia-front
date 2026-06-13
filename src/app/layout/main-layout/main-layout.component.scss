@@ -1,0 +1,25 @@
+.layout-container {
+  height: 100vh;
+  display: flex;
+}
+
+.sidebar-nav {
+  width: var(--sidebar-width);
+  background: var(--color-sidebar-bg);
+  border-right: none;
+}
+
+.layout-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--color-bg);
+  min-height: calc(100vh - var(--navbar-height));
+}

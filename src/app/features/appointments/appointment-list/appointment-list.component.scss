@@ -1,0 +1,117 @@
+.date-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  .date-field { width: 160px; margin-bottom: -22px; }
+  .date-label { font-size: .875rem; color: var(--color-text-muted); font-weight: 500; text-transform: capitalize; }
+}
+
+.agenda-layout {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 20px;
+
+  @media (max-width: 900px) { grid-template-columns: 1fr; }
+}
+
+.card-title {
+  font-size: 1rem; font-weight: 600; margin: 0 0 16px;
+  display: flex; align-items: center; gap: 6px;
+}
+
+// ─── Timeline ────────────────────────────────────────────────────────────────
+.timeline { display: flex; flex-direction: column; gap: 12px; }
+
+.timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  .tl-time {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    width: 44px;
+    flex-shrink: 0;
+    padding-top: 12px;
+  }
+
+  .tl-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--color-border);
+    margin-top: 16px;
+    flex-shrink: 0;
+    border: 2px solid var(--color-surface);
+    box-shadow: 0 0 0 2px var(--color-border);
+  }
+
+  &.confirmada .tl-dot { background: #1565C0; box-shadow: 0 0 0 2px rgba(21,101,192,.3); }
+  &.atendida   .tl-dot { background: var(--color-success); box-shadow: 0 0 0 2px rgba(76,175,80,.3); }
+  &.cancelada  .tl-dot { background: var(--color-warn); box-shadow: 0 0 0 2px rgba(244,67,54,.3); }
+  &.pendiente  .tl-dot { background: #E65100; box-shadow: 0 0 0 2px rgba(230,81,0,.3); }
+}
+
+.tl-card {
+  flex: 1;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+
+  .tl-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;
+    .tl-client { font-weight: 600; font-size: .9rem; }
+    .tl-badges { display: flex; align-items: center; gap: 6px; }
+  }
+
+  .tl-worker {
+    display: flex; align-items: center; gap: 4px; margin-bottom: 4px;
+    mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  }
+
+  .tl-services { color: var(--color-text-muted); }
+
+  .tl-footer {
+    display: flex; align-items: center; justify-content: space-between; margin-top: 8px;
+    .tl-total { font-weight: 700; color: var(--color-primary); }
+    .tl-actions { display: flex; gap: 4px; }
+  }
+}
+
+// ─── Summary ─────────────────────────────────────────────────────────────────
+.summary-stats { display: flex; flex-direction: column; gap: 8px; }
+
+.ss-item {
+  display: flex; align-items: center; justify-content: space-between;
+  .ss-count { font-weight: 700; font-size: 1rem; }
+}
+
+.total-amount { font-size: 1.75rem; font-weight: 700; color: var(--color-primary); margin: 0; }
+
+// ─── Web origin badge ─────────────────────────────────────────────────────────
+.web-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: .7rem;
+  font-weight: 600;
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+  cursor: default;
+  white-space: nowrap;
+
+  mat-icon { font-size: 12px; width: 12px; height: 12px; }
+}
+
+// ─── Empty state ─────────────────────────────────────────────────────────────
+.empty-state {
+  text-align: center; padding: 48px 16px; color: var(--color-text-muted);
+  mat-icon { font-size: 48px; width: 48px; height: 48px; opacity: .3; display: block; margin: 0 auto 12px; }
+  p { margin: 0 0 16px; }
+}
