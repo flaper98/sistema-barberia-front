@@ -14,7 +14,10 @@ export class MovementFormComponent implements OnInit {
   constructor(private fb: FormBuilder, private router: Router, private productService: ProductService, private authService: AuthService, private snackBar: MatSnackBar) {}
 
   ngOnInit(): void {
-    this.productService.getAll().subscribe(p => { this.products = p.filter(pr => pr.estado); });
+    this.productService.getAll().subscribe({
+      next: p => { this.products = p.filter(pr => pr.estado); },
+      error: (err: Error) => this.snackBar.open(err.message, 'Cerrar', { duration: 4000 }),
+    });
     this.form = this.fb.group({
       productoId: [null, Validators.required],
       tipoMovimiento: ['ENTRADA', Validators.required],

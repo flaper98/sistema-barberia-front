@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
-  apiUrl: 'http://localhost:8080/api',
-  appName: 'BarberSystem',
+  apiUrl: '/api',
+  appName: 'Árabes Barber Studio',
   version: '1.0.0',
   useMocks: false,
   jwtTokenKey: 'barber_token',

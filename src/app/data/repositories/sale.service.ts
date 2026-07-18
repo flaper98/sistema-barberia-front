@@ -2,9 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Sale, SaleFilters, QuickSaleForm } from '../../core/models/sale.model';
+import { Sale, SaleFilters, QuickSaleForm, PaymentMethod } from '../../core/models/sale.model';
 import { ApiResponse, PageResponse } from '../../core/models/api-response.model';
 import { environment } from '../../../environments/environment';
+import { toLocalDateStr } from '../../core/utils/date.util';
 
 @Injectable({ providedIn: 'root' })
 export class SaleService {
@@ -27,8 +28,12 @@ export class SaleService {
 
   search(filters: SaleFilters): Observable<Sale[]> {
     let params = new HttpParams().set('page', 0).set('size', 100);
-    if (filters.fechaDesde) params = params.set('fechaDesde', filters.fechaDesde);
-    if (filters.fechaHasta) params = params.set('fechaHasta', filters.fechaHasta);
+    // El backend (VentaController.listar) espera los parametros "desde"/
+    // "hasta", no "fechaDesde"/"fechaHasta" -- con el nombre equivocado el
+    // filtro de fecha quedaba silenciosamente sin efecto (@RequestParam
+    // ignora los que no matchean, no tira error).
+    if (filters.fechaDesde) params = params.set('desde', filters.fechaDesde);
+    if (filters.fechaHasta) params = params.set('hasta', filters.fechaHasta);
     if (filters.barberoId) params = params.set('barberoId', filters.barberoId);
     if (filters.tipoVenta) params = params.set('tipoVenta', filters.tipoVenta);
     if (filters.estado) params = params.set('estado', filters.estado);
@@ -38,7 +43,7 @@ export class SaleService {
   }
 
   getTodaySales(): Observable<Sale[]> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDateStr(new Date());
     return this.search({ fechaDesde: today, fechaHasta: today });
   }
 
@@ -83,6 +88,19 @@ export class SaleService {
   cancel(id: number): Observable<Sale> {
     return this.http
       .patch<ApiResponse<Sale>>(`${this.url}/${id}/cancel`, {})
+      .pipe(map(r => r.data!));
+  }
+
+  confirm(id: number, metodoPago?: PaymentMethod): Observable<Sale> {
+    return this.http
+      .patch<ApiResponse<Sale>>(`${this.url}/${id}/confirm`, metodoPago ? { metodoPago } : {})
+      .pipe(map(r => r.data!));
+  }
+
+  /** Solo ADMIN (validado tambien en el backend). No permite editar los items. */
+  update(id: number, data: { clienteId: number; barberoId: number; metodoPago: PaymentMethod; descuento: number; notas?: string }): Observable<Sale> {
+    return this.http
+      .put<ApiResponse<Sale>>(`${this.url}/${id}`, data)
       .pipe(map(r => r.data!));
   }
 

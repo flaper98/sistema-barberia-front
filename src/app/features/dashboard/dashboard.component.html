@@ -26,7 +26,7 @@
         <div class="stat-icon primary"><mat-icon>point_of_sale</mat-icon></div>
         <div class="stat-info">
           <div class="stat-value">{{ stats.ventasHoy }}</div>
-          <div class="stat-label">Ventas del día</div>
+          <div class="stat-label">{{ authService.hasRole(['BARBER']) ? 'Mis ventas de hoy' : 'Ventas del día' }}</div>
         </div>
       </div>
 
@@ -34,11 +34,11 @@
         <div class="stat-icon accent"><mat-icon>attach_money</mat-icon></div>
         <div class="stat-info">
           <div class="stat-value">S/ {{ stats.ingresosHoy | number:'1.2-2' }}</div>
-          <div class="stat-label">Ingresos del día</div>
+          <div class="stat-label">{{ authService.hasRole(['BARBER']) ? 'Mis ingresos de hoy' : 'Ingresos del día' }}</div>
         </div>
       </div>
 
-      <div class="stat-card success">
+      <div class="stat-card success clickable" routerLink="/appointments" matTooltip="Ir a Citas">
         <div class="stat-icon success"><mat-icon>calendar_today</mat-icon></div>
         <div class="stat-info">
           <div class="stat-value">{{ stats.citasHoy }}</div>
@@ -46,15 +46,23 @@
         </div>
       </div>
 
-      <div class="stat-card primary">
+      <div class="stat-card primary" [class.clickable]="puedeVerHistorialVentas" [routerLink]="puedeVerHistorialVentas ? ['/sales/list'] : null" [queryParams]="{estado: 'COMPLETADA'}" [matTooltip]="puedeVerHistorialVentas ? 'Ver ventas completadas de hoy' : ''">
         <div class="stat-icon primary"><mat-icon>people</mat-icon></div>
         <div class="stat-info">
           <div class="stat-value">{{ stats.clientesAtendidos }}</div>
-          <div class="stat-label">Clientes atendidos</div>
+          <div class="stat-label">{{ authService.hasRole(['BARBER']) ? 'Mis clientes atendidos' : 'Clientes atendidos' }}</div>
         </div>
       </div>
 
-      <div class="stat-card warn" *ngIf="stats.productosStockBajo > 0">
+      <div class="stat-card gold clickable" *ngIf="pendingSalesCount > 0 && puedeVerSolicitudesPendientes" [routerLink]="['/sales/list']" [queryParams]="{estado: 'PENDIENTE'}" matTooltip="Ir al historial de ventas">
+        <div class="stat-icon gold"><mat-icon>pending_actions</mat-icon></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ pendingSalesCount }}</div>
+          <div class="stat-label">Solicitudes pendientes de cobro</div>
+        </div>
+      </div>
+
+      <div class="stat-card warn" *ngIf="stats.productosStockBajo > 0 && puedeVerAlertasNegocio">
         <div class="stat-icon warn"><mat-icon>warning</mat-icon></div>
         <div class="stat-info">
           <div class="stat-value">{{ stats.productosStockBajo }}</div>
@@ -62,7 +70,7 @@
         </div>
       </div>
 
-      <div class="stat-card success">
+      <div class="stat-card success" *ngIf="stats.barberoTopNombre && stats.barberoTopNombre !== '-'">
         <div class="stat-icon success"><mat-icon>emoji_events</mat-icon></div>
         <div class="stat-info">
           <div class="stat-value">{{ stats.barberoTopNombre }}</div>
@@ -70,8 +78,8 @@
         </div>
       </div>
 
-      <div class="stat-card accent" *ngIf="stats.recompensasPendientes > 0">
-        <div class="stat-icon accent"><mat-icon>loyalty</mat-icon></div>
+      <div class="stat-card gold" *ngIf="stats.recompensasPendientes > 0 && puedeVerAlertasNegocio">
+        <div class="stat-icon gold"><mat-icon>loyalty</mat-icon></div>
         <div class="stat-info">
           <div class="stat-value">{{ stats.recompensasPendientes }}</div>
           <div class="stat-label">Recompensas pendientes</div>
@@ -81,20 +89,6 @@
 
     <!-- Content grid -->
     <div class="dashboard-grid">
-
-      <!-- Ventas semana (bar chart simple) -->
-      <div class="card" *ngIf="chartData">
-        <h3 class="card-title">Ventas últimos 7 días</h3>
-        <div class="bar-chart">
-          <div class="bar-item" *ngFor="let v of chartData.ventasSemana">
-            <div class="bar-wrapper">
-              <span class="bar-value" *ngIf="v.monto > 0">S/{{ v.monto | number:'1.0-0' }}</span>
-              <div class="bar-fill" [style.height.%]="getBarWidth(v.monto)"></div>
-            </div>
-            <span class="bar-label">{{ v.dia }}</span>
-          </div>
-        </div>
-      </div>
 
       <!-- Citas de hoy -->
       <div class="card">
@@ -107,14 +101,23 @@
           <p>Sin citas para hoy</p>
         </div>
         <div class="appointment-list" *ngIf="todayAppointments.length > 0">
-          <div class="appt-item" *ngFor="let a of todayAppointments">
-            <div class="appt-time">{{ a.hora }}</div>
+          <div class="appt-item" *ngFor="let a of pagedAppointments">
+            <div class="appt-time">{{ a.hora | slice:0:5 }}</div>
             <div class="appt-info">
               <div class="appt-client">{{ a.clienteNombre }}</div>
               <div class="appt-worker text-muted text-sm">{{ a.barberoNombre }}</div>
             </div>
             <span class="status-chip" [ngClass]="getStatusClass(a.estado)">{{ a.estado }}</span>
           </div>
+        </div>
+        <div class="mini-pager" *ngIf="totalAppointmentsPages > 1">
+          <button mat-icon-button [disabled]="appointmentsPage === 0" (click)="cambiarPagina('appointments', -1)">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <span class="text-muted text-sm">{{ appointmentsPage + 1 }} / {{ totalAppointmentsPages }}</span>
+          <button mat-icon-button [disabled]="appointmentsPage >= totalAppointmentsPages - 1" (click)="cambiarPagina('appointments', 1)">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
         </div>
       </div>
 
@@ -126,16 +129,25 @@
           <p>Sin datos aún</p>
         </div>
         <div class="top-services">
-          <div class="service-item" *ngFor="let s of chartData.serviciosMasVendidos; let i = index">
-            <span class="service-rank">{{ i + 1 }}</span>
+          <div class="service-item" *ngFor="let s of pagedServices; let i = index">
+            <span class="service-rank">{{ rankDe(i) }}</span>
             <span class="service-name">{{ s.nombre }}</span>
             <span class="service-count">{{ s.cantidad }}x</span>
           </div>
         </div>
+        <div class="mini-pager" *ngIf="totalServicesPages > 1">
+          <button mat-icon-button [disabled]="servicesPage === 0" (click)="cambiarPagina('services', -1)">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <span class="text-muted text-sm">{{ servicesPage + 1 }} / {{ totalServicesPages }}</span>
+          <button mat-icon-button [disabled]="servicesPage >= totalServicesPages - 1" (click)="cambiarPagina('services', 1)">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
       </div>
 
       <!-- Stock bajo -->
-      <div class="card warn-border" *ngIf="lowStockProducts.length > 0">
+      <div class="card warn-border" *ngIf="lowStockProducts.length > 0 && puedeVerAlertasNegocio">
         <div class="card-header">
           <h3 class="card-title">
             <mat-icon class="warn-icon">warning</mat-icon>
@@ -144,12 +156,21 @@
           <a routerLink="/inventory" mat-button color="warn" class="text-sm">Ver inventario</a>
         </div>
         <div class="low-stock-list">
-          <div class="ls-item" *ngFor="let p of lowStockProducts">
+          <div class="ls-item" *ngFor="let p of pagedLowStock">
             <div class="ls-name">{{ p.nombre }}</div>
             <div class="ls-stock">
               <span class="status-chip low-stock">{{ p.stockActual }} / {{ p.stockMinimo }}</span>
             </div>
           </div>
+        </div>
+        <div class="mini-pager" *ngIf="totalLowStockPages > 1">
+          <button mat-icon-button [disabled]="lowStockPage === 0" (click)="cambiarPagina('lowStock', -1)">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <span class="text-muted text-sm">{{ lowStockPage + 1 }} / {{ totalLowStockPages }}</span>
+          <button mat-icon-button [disabled]="lowStockPage >= totalLowStockPages - 1" (click)="cambiarPagina('lowStock', 1)">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
         </div>
       </div>
 

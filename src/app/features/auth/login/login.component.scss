@@ -9,7 +9,9 @@
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(150deg, #1a2327 0%, #263238 45%, #37474f 100%);
+  background:
+    linear-gradient(150deg, rgba(10, 10, 11, .92) 0%, rgba(20, 20, 21, .89) 45%, rgba(36, 36, 38, .86) 100%),
+    url('/brand/local.png') center / cover no-repeat;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -23,7 +25,7 @@
 .deco-circle {
   position: absolute;
   border-radius: 50%;
-  border: 1.5px solid rgba(255, 215, 64, .07);
+  border: 1.5px solid rgba(200, 200, 205, .09);
   pointer-events: none;
 
   &--top {
@@ -32,7 +34,7 @@
     top: -180px;
     right: -140px;
     // segundo anillo
-    box-shadow: 0 0 0 60px rgba(255, 215, 64, .025);
+    box-shadow: 0 0 0 60px rgba(200, 200, 205, .035);
   }
 
   &--bottom {
@@ -40,7 +42,7 @@
     height: 320px;
     bottom: -120px;
     left: -80px;
-    border-color: rgba(255, 215, 64, .05);
+    border-color: rgba(200, 200, 205, .06);
   }
 }
 
@@ -54,19 +56,16 @@
 .brand-logo {
   width: 72px;
   height: 72px;
-  background: rgba(255, 215, 64, .12);
-  border: 1.5px solid rgba(255, 215, 64, .28);
+  border: 1.5px solid rgba(200, 200, 205, .35);
   border-radius: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
   margin-bottom: 28px;
 
-  mat-icon {
-    font-size: 36px;
-    width: 36px;
-    height: 36px;
-    color: var(--color-accent);
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 }
 
@@ -138,12 +137,25 @@
   justify-content: center;
   padding: 56px 48px;
 
-  @media (max-width: 768px) { width: 100%; padding: 32px 24px; }
+  @media (max-width: 768px) { width: 100%; padding: 32px 20px; }
 }
 
 .login-card {
   width: 100%;
   max-width: 400px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border-top: 3px solid var(--color-accent);
+  box-shadow: var(--shadow-lg);
+  padding: 44px 40px 40px;
+  animation: card-in .45s cubic-bezier(.16, 1, .3, 1);
+
+  @media (max-width: 768px) { padding: 32px 24px 28px; }
+}
+
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 // ─── Cabecera del formulario ──────────────────────────────────────────────────
@@ -154,18 +166,15 @@
 .form-logo {
   width: 52px;
   height: 52px;
-  background: rgba(55, 71, 79, .08);
   border-radius: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
   margin-bottom: 20px;
 
-  mat-icon {
-    font-size: 26px;
-    width: 26px;
-    height: 26px;
-    color: var(--color-primary);
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 }
 
@@ -208,114 +217,50 @@
 }
 
 .submit-btn {
+  // El boton nunca tenia color="primary" en el HTML, asi que Material lo
+  // dejaba "sin tema" (clase .mat-unthemed) con fondo blanco -- un simple
+  // "background:" en esta clase no le ganaba en especificidad a la regla
+  // de Material. La forma robusta de pisarlo es sobreescribir la variable
+  // CSS que Material realmente usa para pintar el relleno del boton.
+  --mdc-filled-button-container-color: var(--color-primary-dark);
+  --mdc-filled-button-label-text-color: #fff;
+  --mat-mdc-button-persistent-ripple-color: #fff;
+  --mat-mdc-button-ripple-color: rgba(255, 255, 255, .12);
+
   height: 50px;
   font-size: .9375rem;
   font-weight: 600;
-  margin-top: 8px;
+  margin-top: 12px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   letter-spacing: .2px;
-  background: var(--color-primary-dark);
-  color: #fff;
+  box-shadow: var(--shadow-sm);
+  transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
 
-  &:hover:not([disabled]) { background: var(--color-primary); }
-
-  mat-icon { font-size: 20px; width: 20px; height: 20px; }
-}
-
-.btn-spinner { display: inline-flex; }
-
-// ─── Sección de demo ──────────────────────────────────────────────────────────
-.demo-section {
-  margin-top: 28px;
-  padding-top: 24px;
-  border-top: 1px solid var(--color-border);
-}
-
-.demo-label {
-  display: block;
-  font-size: .75rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
-  text-align: center;
-  margin-bottom: 12px;
-  letter-spacing: .3px;
-}
-
-.demo-accounts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.demo-btn {
-  font-size: .8rem;
-  font-weight: 500;
-  height: 38px;
-  border-radius: var(--radius-sm);
-  color: var(--color-text-muted);
-  border-color: var(--color-border);
-  transition: var(--transition);
-
-  &:hover {
-    color: var(--color-primary);
-    border-color: var(--color-primary-light);
-    background: rgba(55, 71, 79, .04);
+  &:hover:not([disabled]) {
+    --mdc-filled-button-container-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
   }
-}
 
-.demo-hint {
-  text-align: center;
-  font-size: .75rem;
-  color: var(--color-text-muted);
-  margin: 12px 0 0;
+  &:active:not([disabled]) { transform: translateY(0); }
 
-  code {
-    background: #f5f5f5;
-    padding: 2px 7px;
-    border-radius: 4px;
-    font-family: 'Roboto Mono', monospace;
-    font-size: .8rem;
-    color: var(--color-primary-dark);
-    font-weight: 600;
-    letter-spacing: .5px;
+  &:focus-visible { outline: 2px solid var(--color-gold); outline-offset: 2px; }
+
+  &[disabled] { opacity: .65; box-shadow: none; }
+
+  mat-icon {
+    font-size: 20px; width: 20px; height: 20px;
+    transition: transform .15s ease;
   }
+
+  &:hover:not([disabled]) mat-icon { transform: translateX(2px); }
 }
 
-// ─── Sección de reserva pública ───────────────────────────────────────────────
-.booking-section {
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid var(--color-border);
-}
-
-.booking-label {
-  display: block;
-  font-size: .75rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
-  text-align: center;
-  margin-bottom: 10px;
-  letter-spacing: .3px;
-}
-
-.booking-btn {
-  height: 46px;
-  font-size: .9rem;
-  font-weight: 600;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: #1a237e;
-  color: #fff;
-  text-decoration: none;
-
-  mat-icon { font-size: 20px; width: 20px; height: 20px; }
-
-  &:hover { background: #283593; }
+.btn-spinner {
+  display: inline-flex;
+  ::ng-deep circle { stroke: #fff; }
 }

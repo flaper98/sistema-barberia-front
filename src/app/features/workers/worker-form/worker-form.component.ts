@@ -24,7 +24,13 @@ export class WorkerFormComponent implements OnInit {
     });
     if (this.isEdit) {
       this.loading = true;
-      this.workerService.getById(+id!).subscribe({ next: w => { this.form.patchValue(w); this.loading = false; }, error: () => this.router.navigate(['/workers']) });
+      this.workerService.getById(+id!).subscribe({
+        next: w => { this.form.patchValue(w); this.loading = false; },
+        error: (err: Error) => {
+          this.snackBar.open(err.message, 'Cerrar', { duration: 4000 });
+          this.router.navigate(['/workers']);
+        },
+      });
     }
   }
 
@@ -33,7 +39,10 @@ export class WorkerFormComponent implements OnInit {
     this.saving = true;
     const id = this.route.snapshot.paramMap.get('id');
     const op$ = this.isEdit ? this.workerService.update(+id!, this.form.value) : this.workerService.create(this.form.value);
-    op$.subscribe({ next: () => { this.snackBar.open(`Barbero ${this.isEdit ? 'actualizado' : 'creado'}`, '', { duration: 2500 }); this.router.navigate(['/workers']); }, error: () => { this.saving = false; } });
+    op$.subscribe({
+      next: () => { this.snackBar.open(`Barbero ${this.isEdit ? 'actualizado' : 'creado'}`, '', { duration: 2500 }); this.router.navigate(['/workers']); },
+      error: (err: Error) => { this.saving = false; this.snackBar.open(err.message, 'Cerrar', { duration: 4000 }); },
+    });
   }
 
   cancel(): void { this.router.navigate(['/workers']); }

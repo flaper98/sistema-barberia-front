@@ -24,12 +24,13 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Cliente</mat-label>
-            <mat-select formControlName="clienteId">
-              <mat-option [value]="null">Sin cliente</mat-option>
-              <mat-option *ngFor="let c of customers" [value]="c.id">
+            <input matInput [formControl]="clienteInputCtrl" [matAutocomplete]="autoCliente"
+                   placeholder="Escribe o elige un cliente">
+            <mat-autocomplete #autoCliente="matAutocomplete" [displayWith]="displayCustomer">
+              <mat-option *ngFor="let c of filteredCustomers | async" [value]="c">
                 {{ c.nombre }} {{ c.apellido }}
               </mat-option>
-            </mat-select>
+            </mat-autocomplete>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
@@ -54,20 +55,14 @@
           <textarea matInput formControlName="notas" rows="2" placeholder="Instrucciones especiales..."></textarea>
         </mat-form-field>
 
-        <h3 class="section-sub">Servicios *</h3>
-        <div class="services-grid">
-          <div
-            *ngFor="let s of services"
-            class="service-tile"
-            [class.selected]="isSelected(s)"
-            (click)="toggleService(s)">
-            <mat-icon>{{ isSelected(s) ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
-            <div class="st-info">
-              <span class="st-name">{{ s.nombre }}</span>
-              <span class="st-meta text-muted text-sm">{{ s.duracionMinutos }} min · S/ {{ s.precio }}</span>
-            </div>
-          </div>
-        </div>
+        <mat-form-field appearance="outline" class="w-full mt-8">
+          <mat-label>Servicios *</mat-label>
+          <mat-select [value]="selectedServiceIds" multiple (selectionChange)="onServicesChange($event.value)">
+            <mat-option *ngFor="let s of services" [value]="s.id">
+              {{ s.nombre }} · {{ s.duracionMinutos }} min · S/ {{ s.precio }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
 
         <div class="total-bar" *ngIf="selectedServices.length">
           <span>{{ selectedServices.length }} servicio(s) seleccionado(s)</span>

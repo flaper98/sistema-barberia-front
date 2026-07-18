@@ -1,9 +1,9 @@
 <div class="sidebar">
   <!-- Logo / Brand -->
   <div class="sidebar-brand">
-    <mat-icon class="brand-icon">content_cut</mat-icon>
+    <img class="brand-logo" src="/brand/logo.png" alt="Árabes Barber Studio">
     <div class="brand-text">
-      <span class="brand-name">BarberSystem</span>
+      <span class="brand-name">Árabes Barber Studio</span>
       <span class="brand-sub">Sistema de gestión</span>
     </div>
   </div>
@@ -27,9 +27,10 @@
       <a
         *ngIf="isVisible(item)"
         class="nav-item"
-        [routerLink]="item.route"
+        [routerLink]="getRoute(item)"
         routerLinkActive="active"
         [routerLinkActiveOptions]="{ exact: false }"
+        (click)="itemClick.emit()"
         matRipple>
         <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
         <span class="nav-label">{{ item.label }}</span>

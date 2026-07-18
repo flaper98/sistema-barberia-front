@@ -14,10 +14,16 @@ export class ServiceFormComponent implements OnInit {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     this.isEdit = !!id && !isNaN(+id);
-    this.form = this.fb.group({ nombre: ['', Validators.required], categoria: ['CORTE', Validators.required], precio: [0, [Validators.required, Validators.min(0)]], duracionMinutos: [30, [Validators.required, Validators.min(5)]], descripcion: [''], estado: [true] });
+    this.form = this.fb.group({ nombre: ['', Validators.required], categoria: ['CORTE', Validators.required], precio: [0, [Validators.required, Validators.min(0)]], precioVariable: [false], duracionMinutos: [30, [Validators.required, Validators.min(5)]], descripcion: [''], estado: [true] });
     if (this.isEdit) {
       this.loading = true;
-      this.svc.getById(+id!).subscribe({ next: s => { this.form.patchValue(s); this.loading = false; }, error: () => this.router.navigate(['/services']) });
+      this.svc.getById(+id!).subscribe({
+        next: s => { this.form.patchValue(s); this.loading = false; },
+        error: (err: Error) => {
+          this.snackBar.open(err.message, 'Cerrar', { duration: 4000 });
+          this.router.navigate(['/services']);
+        },
+      });
     }
   }
 
@@ -26,7 +32,10 @@ export class ServiceFormComponent implements OnInit {
     this.saving = true;
     const id = this.route.snapshot.paramMap.get('id');
     const op$ = this.isEdit ? this.svc.update(+id!, this.form.value) : this.svc.create(this.form.value);
-    op$.subscribe({ next: () => { this.snackBar.open('Servicio guardado', '', { duration: 2500 }); this.router.navigate(['/services']); }, error: () => { this.saving = false; } });
+    op$.subscribe({
+      next: () => { this.snackBar.open('Servicio guardado', '', { duration: 2500 }); this.router.navigate(['/services']); },
+      error: (err: Error) => { this.saving = false; this.snackBar.open(err.message, 'Cerrar', { duration: 4000 }); },
+    });
   }
 
   cancel(): void { this.router.navigate(['/services']); }

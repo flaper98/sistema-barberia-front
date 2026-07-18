@@ -29,8 +29,8 @@ export class FinanceService {
     let params = new HttpParams().set('page', 0).set('size', 100);
     if (filters.tipo) params = params.set('tipo', filters.tipo);
     if (filters.categoria) params = params.set('categoria', filters.categoria);
-    if (filters.fechaDesde) params = params.set('fechaDesde', filters.fechaDesde);
-    if (filters.fechaHasta) params = params.set('fechaHasta', filters.fechaHasta);
+    if (filters.fechaDesde) params = params.set('desde', filters.fechaDesde);
+    if (filters.fechaHasta) params = params.set('hasta', filters.fechaHasta);
     return this.http
       .get<ApiResponse<PageResponse<FinanceEntry>>>(this.url, { params })
       .pipe(map(r => r.data?.content ?? []));
@@ -38,8 +38,8 @@ export class FinanceService {
 
   getSummary(fechaDesde?: string, fechaHasta?: string): Observable<FinanceSummary> {
     let params = new HttpParams();
-    if (fechaDesde) params = params.set('fechaDesde', fechaDesde);
-    if (fechaHasta) params = params.set('fechaHasta', fechaHasta);
+    if (fechaDesde) params = params.set('desde', fechaDesde);
+    if (fechaHasta) params = params.set('hasta', fechaHasta);
     return this.http
       .get<ApiResponse<FinanceSummary>>(`${this.url}/summary`, { params })
       .pipe(map(r => r.data!));

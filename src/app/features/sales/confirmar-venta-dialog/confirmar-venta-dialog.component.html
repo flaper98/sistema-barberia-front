@@ -1,0 +1,38 @@
+<h2 mat-dialog-title>Aceptar y cobrar solicitud #{{ sale.id }}</h2>
+
+<mat-dialog-content style="min-width:340px;">
+  <div class="info-list mb-16">
+    <div class="info-item"><mat-icon>content_cut</mat-icon><span>{{ sale.barberoNombre }}</span></div>
+    <div class="info-item" *ngIf="sale.clienteNombre"><mat-icon>person</mat-icon><span>{{ sale.clienteNombre }}</span></div>
+  </div>
+
+  <div class="order-items mb-16">
+    <div class="order-item" *ngFor="let item of sale.items">
+      <span class="oi-qty">{{ item.cantidad }}x</span>
+      <span class="oi-name">{{ item.nombre }}</span>
+      <span class="oi-price">S/ {{ item.subtotal | number:'1.2-2' }}</span>
+    </div>
+  </div>
+
+  <p style="font-weight:700; font-size:1.1rem; text-align:right; margin:0 0 16px;">Total: S/ {{ sale.total | number:'1.2-2' }}</p>
+
+  <p class="text-muted text-sm mb-8">Método de pago</p>
+  <div class="payment-methods">
+    <div
+      *ngFor="let pm of paymentMethods"
+      class="payment-method"
+      [class.selected]="metodoPago === pm.value"
+      (click)="metodoPago = pm.value">
+      <mat-icon>{{ pm.icon }}</mat-icon>
+      <span>{{ pm.label }}</span>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="confirmar()" [disabled]="saving">
+    <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+    <span *ngIf="!saving">Aceptar y cobrar</span>
+  </button>
+</mat-dialog-actions>

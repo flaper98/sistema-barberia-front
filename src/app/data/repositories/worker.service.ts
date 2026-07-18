@@ -2,9 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Worker, WorkerFilters } from '../../core/models/worker.model';
+import { Worker, WorkerFilters, WorkerSelector } from '../../core/models/worker.model';
 import { ApiResponse, PageResponse } from '../../core/models/api-response.model';
 import { environment } from '../../../environments/environment';
+import { matchesSearch } from '../../core/utils/search.util';
 
 export interface WorkerSummary {
   barberoId: number;
@@ -37,6 +38,13 @@ export class WorkerService {
       .pipe(map(r => (r.data?.content ?? []).filter(w => w.estado)));
   }
 
+  /** Lista mínima (sin comisión/ventas) para selectores — disponible sin el permiso del módulo Barberos. */
+  getForSale(): Observable<WorkerSelector[]> {
+    return this.http
+      .get<ApiResponse<WorkerSelector[]>>(`${this.url}/for-sale`)
+      .pipe(map(r => r.data ?? []));
+  }
+
   getById(id: number): Observable<Worker> {
     return this.http
       .get<ApiResponse<Worker>>(`${this.url}/${id}`)
@@ -51,7 +59,7 @@ export class WorkerService {
       .pipe(map(r => {
         let result = r.data?.content ?? [];
         if (filters.estado !== undefined) result = result.filter(w => w.estado === filters.estado);
-        if (filters.especialidad) result = result.filter(w => w.especialidad?.toLowerCase().includes(filters.especialidad!.toLowerCase()));
+        if (filters.especialidad) result = result.filter(w => matchesSearch(filters.especialidad!, w.especialidad));
         return result;
       }));
   }
@@ -75,7 +83,9 @@ export class WorkerService {
   }
 
   delete(id: number): Observable<void> {
-    return this.toggleStatus(id, false).pipe(map(() => undefined));
+    return this.http
+      .delete<ApiResponse<void>>(`${this.url}/${id}`)
+      .pipe(map(() => undefined));
   }
 
   getSummary(id: number): Observable<WorkerSummary> {

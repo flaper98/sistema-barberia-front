@@ -5,7 +5,8 @@
     <!-- Barbery info -->
     <div class="card">
       <h3 class="settings-title"><mat-icon>store</mat-icon> Datos de la barbería</h3>
-      <form [formGroup]="barberyForm" (ngSubmit)="saveBarbery()">
+      <div *ngIf="loadingBarbery" class="text-center"><mat-spinner diameter="32" style="margin:auto"></mat-spinner></div>
+      <form [formGroup]="barberyForm" (ngSubmit)="saveBarbery()" *ngIf="!loadingBarbery">
         <div class="form-row">
           <mat-form-field appearance="outline" style="grid-column:span 2"><mat-label>Nombre</mat-label><input matInput formControlName="nombre"></mat-form-field>
           <mat-form-field appearance="outline" style="grid-column:span 2"><mat-label>Dirección</mat-label><input matInput formControlName="direccion"></mat-form-field>
@@ -14,6 +15,29 @@
           <mat-form-field appearance="outline"><mat-label>RUC</mat-label><input matInput formControlName="ruc"></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Horario</mat-label><input matInput formControlName="horario"></mat-form-field>
         </div>
+
+        <div class="section-sub">Mensaje de bienvenida por WhatsApp</div>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Mensaje</mat-label>
+          <textarea matInput formControlName="mensajeBienvenidaWhatsapp" rows="3"></textarea>
+          <mat-hint>Podés usar {{ '{nombre}' }} y {{ '{negocio}' }} — se reemplazan automáticamente</mat-hint>
+        </mat-form-field>
+        <div class="whatsapp-preview">
+          <mat-icon>chat</mat-icon>
+          <span>{{ vistaPreviaMensaje }}</span>
+        </div>
+
+        <div class="section-sub">Mensaje de recordatorio para clientes inactivos</div>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Mensaje</mat-label>
+          <textarea matInput formControlName="mensajeRecordatorioWhatsapp" rows="3"></textarea>
+          <mat-hint>Se usa desde el botón de WhatsApp en la lista de Clientes — combinalo con el filtro de Inactividad</mat-hint>
+        </mat-form-field>
+        <div class="whatsapp-preview">
+          <mat-icon>campaign</mat-icon>
+          <span>{{ vistaPreviaRecordatorio }}</span>
+        </div>
+
         <div class="form-actions">
           <button mat-flat-button color="primary" type="submit" [disabled]="saving">
             <mat-spinner diameter="16" *ngIf="saving"></mat-spinner>
@@ -46,6 +70,35 @@
       </div>
     </div>
 
+    <!-- iCloud sync -->
+    <div class="card">
+      <h3 class="settings-title"><mat-icon>cloud_sync</mat-icon> Sincronización con iCloud</h3>
+      <div *ngIf="loadingIcloud" class="text-center"><mat-spinner diameter="32" style="margin:auto"></mat-spinner></div>
+      <form [formGroup]="icloudForm" (ngSubmit)="saveIcloud()" *ngIf="!loadingIcloud">
+        <p class="text-muted text-sm mb-8">
+          Cada cliente que se registre se va a agregar automáticamente a tus Contactos de iCloud.
+          Necesitás una <strong>contraseña de aplicación</strong> (no tu contraseña normal de Apple ID):
+          entrá a appleid.apple.com → Inicio de sesión y seguridad → Contraseñas específicas de apps.
+        </p>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Apple ID (email)</mat-label>
+          <input matInput type="email" formControlName="username">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>{{ icloudPasswordConfigured ? 'Nueva contraseña de aplicación' : 'Contraseña de aplicación' }}</mat-label>
+          <input matInput type="password" formControlName="appPassword" autocomplete="new-password">
+          <mat-hint *ngIf="icloudPasswordConfigured">Ya hay una guardada — dejalo en blanco para conservarla</mat-hint>
+        </mat-form-field>
+        <mat-slide-toggle formControlName="enabled" class="mb-16">Sincronización activa</mat-slide-toggle>
+        <div class="form-actions">
+          <button mat-flat-button color="primary" type="submit" [disabled]="savingIcloud">
+            <mat-spinner diameter="16" *ngIf="savingIcloud"></mat-spinner>
+            <span *ngIf="!savingIcloud">Guardar</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
     <!-- Loyalty config -->
     <div class="card" *ngIf="loyaltyForm">
       <h3 class="settings-title"><mat-icon>loyalty</mat-icon> Configuración fidelización</h3>
@@ -55,6 +108,15 @@
           <input matInput type="number" formControlName="sellosNecesarios" min="1">
           <mat-hint>Actualmente: {{ loyaltyForm.get('sellosNecesarios')?.value }} sellos</mat-hint>
         </mat-form-field>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Sellos otorgados por cada servicio</mat-label>
+          <input matInput type="number" formControlName="sellosPorGanancia" min="1">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Descripción de la recompensa</mat-label>
+          <input matInput formControlName="descripcionRecompensa" placeholder="Ej: Corte gratis">
+        </mat-form-field>
+        <mat-slide-toggle formControlName="activo" class="mb-16">Programa de fidelización activo</mat-slide-toggle>
         <div class="form-actions">
           <button mat-flat-button color="accent" type="submit">Actualizar</button>
         </div>

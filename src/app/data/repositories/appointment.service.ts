@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Appointment, AppointmentFilters, AppointmentStatus } from '../../core/models/appointment.model';
+import { Sale, QuickSaleForm } from '../../core/models/sale.model';
 import { ApiResponse, PageResponse } from '../../core/models/api-response.model';
 import { environment } from '../../../environments/environment';
 
@@ -75,9 +76,23 @@ export class AppointmentService {
     return this.updateStatus(id, 'CANCELADA').pipe(map(() => undefined));
   }
 
-  convertToSale(citaId: number): Observable<unknown> {
+  convertToSale(citaId: number, form: QuickSaleForm): Observable<Sale> {
+    const body = {
+      clienteId: form.clienteId ?? null,
+      barberoId: form.barberoId,
+      metodoPago: form.metodoPago,
+      descuento: form.descuento ?? 0,
+      notas: form.notas ?? null,
+      items: form.items.map(i => ({
+        tipo: i.tipo,
+        itemId: i.itemId,
+        nombre: i.nombre,
+        precio: i.precio,
+        cantidad: i.cantidad,
+      })),
+    };
     return this.http
-      .post<ApiResponse<unknown>>(`${this.url}/${citaId}/convert-to-sale`, {})
-      .pipe(map(r => r.data));
+      .post<ApiResponse<Sale>>(`${this.url}/${citaId}/convert-to-sale`, body)
+      .pipe(map(r => r.data!));
   }
 }

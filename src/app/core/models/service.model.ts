@@ -5,6 +5,7 @@ export interface BarberService {
   nombre: string;
   categoria: ServiceCategory;
   precio: number;
+  precioVariable: boolean;
   duracionMinutos: number;
   estado: boolean;
   descripcion?: string;

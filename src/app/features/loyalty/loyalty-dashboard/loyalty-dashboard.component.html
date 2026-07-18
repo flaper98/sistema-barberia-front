@@ -32,7 +32,7 @@
 
       <div class="stamps-container">
         <div
-          *ngFor="let s of getStampArray(); let i = index"
+          *ngFor="let s of getStampArray(acc); let i = index"
           class="stamp-dot"
           [class.filled]="i < acc.sellosActuales">
           <mat-icon>{{ i < acc.sellosActuales ? 'local_activity' : 'radio_button_unchecked' }}</mat-icon>
@@ -47,13 +47,20 @@
         class="mb-8">
       </mat-progress-bar>
 
-      <div class="lc-footer" *ngIf="acc.recompensasDisponibles > 0">
-        <button mat-flat-button color="accent" (click)="redeem(acc)">
-          <mat-icon>redeem</mat-icon> Canjear recompensa
+      <p class="reward-description" *ngIf="acc.recompensasDisponibles > 0">
+        <mat-icon>redeem</mat-icon> Premio: {{ descripcionRecompensa }}
+      </p>
+
+      <div class="lc-footer" *ngIf="puedeEditar">
+        <button mat-stroked-button (click)="addStamp(acc)">
+          <mat-icon>add_circle</mat-icon> Agregar sello
+        </button>
+        <button mat-flat-button color="accent" *ngIf="acc.recompensasDisponibles > 0" (click)="redeem(acc)">
+          <mat-icon>redeem</mat-icon> Canjear {{ descripcionRecompensa }}
         </button>
       </div>
       <div class="lc-footer text-muted text-sm" *ngIf="acc.recompensasDisponibles === 0">
-        Última actividad: {{ acc.ultimoMovimiento || '—' }}
+        Última actividad: {{ (acc.ultimoMovimiento | date:'dd/MM/yyyy') || '—' }}
       </div>
     </div>
 

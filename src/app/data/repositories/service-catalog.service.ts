@@ -61,6 +61,8 @@ export class ServiceCatalogService {
   }
 
   delete(id: number): Observable<void> {
-    return this.toggleStatus(id).pipe(map(() => undefined));
+    return this.http
+      .delete<ApiResponse<void>>(`${this.url}/${id}`)
+      .pipe(map(() => undefined));
   }
 }

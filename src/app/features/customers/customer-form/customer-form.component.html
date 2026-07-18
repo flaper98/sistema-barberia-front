@@ -2,7 +2,19 @@
   <div class="page-header">
     <h1 class="page-title">{{ isEdit ? 'Editar cliente' : 'Nuevo cliente' }}</h1>
   </div>
-  <div class="card" style="max-width:700px">
+  <div class="card" style="max-width:700px" *ngIf="clienteCreado">
+    <p>
+      <strong>{{ clienteCreado.nombre }} {{ clienteCreado.apellido }}</strong> fue registrado correctamente.
+    </p>
+    <div class="form-actions">
+      <button mat-stroked-button (click)="irAClientes()">Ir a clientes</button>
+      <button mat-flat-button color="primary" (click)="enviarBienvenidaWhatsapp()">
+        <mat-icon>chat</mat-icon> Enviar bienvenida por WhatsApp
+      </button>
+    </div>
+  </div>
+
+  <div class="card" style="max-width:700px" *ngIf="!clienteCreado">
     <div *ngIf="loading" class="text-center"><mat-spinner diameter="36" style="margin:auto"></mat-spinner></div>
     <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="!loading">
       <div class="form-row">
@@ -21,7 +33,7 @@
           <input matInput formControlName="telefono" type="tel">
           <mat-icon matPrefix>phone</mat-icon>
           <mat-error *ngIf="form.get('telefono')?.hasError('required')">Requerido</mat-error>
-          <mat-error *ngIf="form.get('telefono')?.hasError('pattern')">Mínimo 9 dígitos</mat-error>
+          <mat-error *ngIf="form.get('telefono')?.hasError('pattern')">Formato inválido (7-20 caracteres, se permite +, espacios y guiones)</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Correo</mat-label>

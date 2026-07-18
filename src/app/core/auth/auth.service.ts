@@ -13,6 +13,7 @@ import {
 } from '../models/user.model';
 import { ApiResponse } from '../models/api-response.model';
 import { TokenService } from './token.service';
+import { PermissionService } from './permission.service';
 import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -31,6 +32,7 @@ export class AuthService {
     private http: HttpClient,
     private router: Router,
     private tokenService: TokenService,
+    private permissionService: PermissionService,
   ) {
     this.restoreSession();
   }
@@ -57,6 +59,15 @@ export class AuthService {
         }),
         tap(data => this.tokenService.setTokens(data.accessToken, data.refreshToken)),
         switchMap(() => this.loadCurrentUser()),
+        switchMap(user =>
+          this.permissionService.cargarMisPermisos().pipe(
+            map(() => user),
+            catchError(() => {
+              // Si falla, se usan los permisos en caché (o ninguno); no debe bloquear el login.
+              return [user];
+            }),
+          ),
+        ),
         catchError(err => {
           const msg = err?.error?.error ?? err?.message ?? 'Credenciales incorrectas';
           return throwError(() => new Error(msg));
@@ -100,6 +111,7 @@ export class AuthService {
             estado: me.estado,
             avatar: me.avatar,
             createdAt: me.createdAt,
+            barberoId: me.barberoId,
           };
           localStorage.setItem(environment.userKey, JSON.stringify(user));
           this.authState.next({ user, token: this.tokenService.getAccessToken(), isAuthenticated: true });
@@ -123,6 +135,7 @@ export class AuthService {
 
   private clearSession(): void {
     this.tokenService.clearTokens();
+    this.permissionService.clear();
     this.authState.next({ user: null, token: null, isAuthenticated: false });
     this.router.navigate(['/login']);
   }
@@ -134,12 +147,17 @@ export class AuthService {
       try {
         const user: User = JSON.parse(userJson);
         this.authState.next({ user, token, isAuthenticated: true });
-        // Refresca el perfil en segundo plano para mantenerlo actualizado
+        // Refresca el perfil y los permisos en segundo plano para mantenerlos actualizados;
+        // mientras tanto se usa lo que ya quedó en caché (igual que con el usuario).
         if (!this.tokenService.isAccessTokenExpired()) {
           this.loadCurrentUser().subscribe({ error: () => this.clearSession() });
+          this.permissionService.cargarMisPermisos().subscribe({ error: () => {} });
         } else {
           this.refreshToken().subscribe({
-            next: () => this.loadCurrentUser().subscribe({ error: () => this.clearSession() }),
+            next: () => {
+              this.loadCurrentUser().subscribe({ error: () => this.clearSession() });
+              this.permissionService.cargarMisPermisos().subscribe({ error: () => {} });
+            },
             error: () => this.clearSession(),
           });
         }

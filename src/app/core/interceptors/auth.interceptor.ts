@@ -79,7 +79,24 @@ export class AuthInterceptor implements HttpInterceptor {
   }
 
   private toUserMessage(err: HttpErrorResponse): Error {
-    if (err.error?.error) return new Error(err.error.error);
+    const body = err.error;
+
+    // Errores de validación (MethodArgumentNotValidException): el detalle útil
+    // vive en fieldErrors[], el "message" de arriba es solo un genérico.
+    if (Array.isArray(body?.fieldErrors) && body.fieldErrors.length) {
+      const detalle = body.fieldErrors
+        .map((fe: { message?: string }) => fe.message)
+        .filter(Boolean)
+        .join(' ');
+      if (detalle) return new Error(detalle);
+    }
+
+    // ErrorResponse (GlobalExceptionHandler): "message" es el texto específico,
+    // "error" es solo la categoría (p.ej. "Conflicto", "Error de negocio").
+    if (body?.message) return new Error(body.message);
+
+    // ApiResponse.error(...): el texto específico viaja en "error".
+    if (body?.error) return new Error(body.error);
 
     const messages: Record<number, string> = {
       400: 'Datos de solicitud inválidos.',

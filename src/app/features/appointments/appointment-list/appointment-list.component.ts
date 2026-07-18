@@ -4,6 +4,9 @@ import { AppointmentService } from '../../../data/repositories/appointment.servi
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { MatDatepickerInputEvent } from '@angular/material/datepicker';
+import { AuthService } from '../../../core/auth/auth.service';
+import { PermissionService } from '../../../core/auth/permission.service';
+import { toLocalDateStr } from '../../../core/utils/date.util';
 
 @Component({
   selector: 'app-appointment-list',
@@ -14,7 +17,7 @@ import { MatDatepickerInputEvent } from '@angular/material/datepicker';
 export class AppointmentListComponent implements OnInit {
   appointments: Appointment[] = [];
   filteredAppointments: Appointment[] = [];
-  selectedDate: string = new Date().toISOString().split('T')[0];
+  selectedDate: string = toLocalDateStr(new Date());
   loading = true;
 
   readonly statuses: AppointmentStatus[] = ['PENDIENTE', 'CONFIRMADA', 'ATENDIDA', 'CANCELADA', 'NO_ASISTIO'];
@@ -25,7 +28,13 @@ export class AppointmentListComponent implements OnInit {
     private apptService: AppointmentService,
     private snackBar: MatSnackBar,
     private router: Router,
+    private authService: AuthService,
+    private permissionService: PermissionService,
   ) {}
+
+  get puedeEditar(): boolean {
+    return this.authService.hasRole(['ADMIN']) || this.permissionService.canEdit('CITAS');
+  }
 
   ngOnInit(): void {
     this.generateTimeSlots();
@@ -47,12 +56,16 @@ export class AppointmentListComponent implements OnInit {
         this.filteredAppointments = appts;
         this.loading = false;
       },
+      error: (err: Error) => {
+        this.loading = false;
+        this.snackBar.open(err.message, 'Cerrar', { duration: 4000 });
+      },
     });
   }
 
   onDateChange(date: Date | null): void {
     if (!date) return;
-    this.selectedDate = date.toISOString().split('T')[0];
+    this.selectedDate = toLocalDateStr(date);
     this.loadAppointments();
   }
 
@@ -69,9 +82,12 @@ export class AppointmentListComponent implements OnInit {
   }
 
   changeStatus(appt: Appointment, status: AppointmentStatus): void {
-    this.apptService.updateStatus(appt.id, status).subscribe(() => {
-      appt.estado = status;
-      this.snackBar.open('Estado actualizado', '', { duration: 2000 });
+    this.apptService.updateStatus(appt.id, status).subscribe({
+      next: () => {
+        appt.estado = status;
+        this.snackBar.open('Estado actualizado', '', { duration: 2000 });
+      },
+      error: (err: Error) => this.snackBar.open(err.message, 'Cerrar', { duration: 4000 }),
     });
   }
 

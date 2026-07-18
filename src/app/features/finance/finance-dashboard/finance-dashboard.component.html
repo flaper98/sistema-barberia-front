@@ -1,9 +1,35 @@
 <div class="page-container fade-in">
   <div class="page-header">
     <div><h1 class="page-title">Finanzas</h1></div>
-    <button mat-flat-button color="primary" (click)="showForm = !showForm">
+    <button mat-flat-button color="primary" *ngIf="puedeEditar" (click)="showForm = !showForm">
       <mat-icon>{{ showForm ? 'close' : 'add' }}</mat-icon> {{ showForm ? 'Cancelar' : 'Nuevo registro' }}
     </button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card filters-card mb-24">
+    <div class="filters-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Desde</mat-label>
+        <input matInput [matDatepicker]="dpDesde" [(ngModel)]="fechaDesde" (dateChange)="onFiltersChange()">
+        <mat-datepicker-toggle matSuffix [for]="dpDesde"></mat-datepicker-toggle>
+        <mat-datepicker #dpDesde></mat-datepicker>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Hasta</mat-label>
+        <input matInput [matDatepicker]="dpHasta" [(ngModel)]="fechaHasta" (dateChange)="onFiltersChange()">
+        <mat-datepicker-toggle matSuffix [for]="dpHasta"></mat-datepicker-toggle>
+        <mat-datepicker #dpHasta></mat-datepicker>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Categoría</mat-label>
+        <mat-select [(ngModel)]="categoriaFiltro" (selectionChange)="onFiltersChange()">
+          <mat-option [value]="null">Todas</mat-option>
+          <mat-option *ngFor="let c of categories" [value]="c">{{ c }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-spinner diameter="24" *ngIf="filtering"></mat-spinner>
+    </div>
   </div>
 
   <!-- Summary stats -->
@@ -82,7 +108,7 @@
         </div>
         <div class="entry-info">
           <div class="font-medium">{{ e.descripcion }}</div>
-          <div class="text-muted text-sm">{{ e.categoria }} · {{ e.fecha }} · {{ e.usuarioNombre }}</div>
+          <div class="text-muted text-sm">{{ e.categoria }} · {{ e.fecha | date:'dd/MM/yyyy' }} · {{ e.usuarioNombre }}</div>
         </div>
         <div class="entry-amount" [ngClass]="e.tipo === 'INGRESO' ? 'ingreso' : 'egreso'">
           {{ e.tipo === 'INGRESO' ? '+' : '-' }} S/ {{ e.monto | number:'1.2-2' }}

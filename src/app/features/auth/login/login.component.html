@@ -7,9 +7,9 @@
 
     <div class="brand-content">
       <div class="brand-logo">
-        <mat-icon>content_cut</mat-icon>
+        <img src="/brand/logo.png" alt="Árabes Barber Studio">
       </div>
-      <h1>BarberSystem</h1>
+      <h1>Árabes Barber Studio</h1>
       <p class="brand-tagline">Sistema integral de gestión<br>para barberías modernas</p>
       <div class="brand-divider"></div>
       <ul class="features-list">
@@ -20,7 +20,7 @@
       </ul>
     </div>
 
-    <p class="brand-footer">© 2026 BarberSystem · Todos los derechos reservados</p>
+    <p class="brand-footer">© 2026 Árabes Barber Studio · Todos los derechos reservados · Flavio Pérez · +51 92590084</p>
   </div>
 
   <!-- Panel derecho — formulario -->
@@ -29,7 +29,7 @@
 
       <div class="form-header">
         <div class="form-logo">
-          <mat-icon>content_cut</mat-icon>
+          <img src="/brand/logo.png" alt="Árabes Barber Studio">
         </div>
         <h2>Bienvenido</h2>
         <p>Ingresa tus credenciales para acceder al sistema</p>
@@ -64,7 +64,7 @@
           <mat-error *ngIf="passCtrl.hasError('minlength')">Mínimo 4 caracteres</mat-error>
         </mat-form-field>
 
-        <button mat-flat-button type="submit" class="submit-btn w-full" [disabled]="loading">
+        <button mat-flat-button color="primary" type="submit" class="submit-btn w-full" [disabled]="loading">
           <mat-spinner diameter="22" *ngIf="loading" class="btn-spinner"></mat-spinner>
           <ng-container *ngIf="!loading">
             <mat-icon>login</mat-icon>
@@ -73,26 +73,6 @@
         </button>
 
       </form>
-
-      <div class="demo-section">
-        <span class="demo-label">Cuentas de demostración</span>
-        <div class="demo-accounts">
-          <button *ngFor="let acc of demoAccounts"
-                  mat-stroked-button class="demo-btn"
-                  (click)="fillDemo(acc.email)">
-            {{ acc.rol }}
-          </button>
-        </div>
-        <p class="demo-hint">Contraseña: <code>123456</code></p>
-      </div>
-
-      <div class="booking-section">
-        <span class="booking-label">¿Eres cliente y quieres reservar?</span>
-        <a mat-flat-button routerLink="/reservar-cita" class="booking-btn w-full">
-          <mat-icon>calendar_today</mat-icon>
-          Reservar cita en línea
-        </a>
-      </div>
 
     </div>
   </div>

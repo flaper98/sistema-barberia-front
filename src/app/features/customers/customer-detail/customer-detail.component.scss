@@ -27,7 +27,7 @@
   border: 2px dashed var(--color-border);
   display: flex; align-items: center; justify-content: center;
   mat-icon { font-size: 20px; color: var(--color-border); }
-  &.filled { border-color: var(--color-accent-dark); background: rgba(255,215,64,.15); mat-icon { color: var(--color-accent-dark); } }
+  &.filled { border-color: var(--color-gold-dark); background: rgba(255,215,64,.15); mat-icon { color: var(--color-gold-dark); } }
 }
 .stamps-label { font-size: .875rem; color: var(--color-text-muted); margin: 0 0 16px; }
 
@@ -48,7 +48,7 @@
 }
 
 .earned   { color: var(--color-success); }
-.redeemed { color: var(--color-accent-dark); }
+.redeemed { color: var(--color-gold-dark); }
 
 .empty-state {
   text-align: center; padding: 32px; color: var(--color-text-muted);

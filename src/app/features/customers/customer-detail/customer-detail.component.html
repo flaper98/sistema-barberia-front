@@ -9,10 +9,11 @@
         <div class="detail-avatar">{{ customer.nombre[0] }}{{ customer.apellido[0] }}</div>
         <div>
           <h1 class="page-title" style="margin-bottom:2px">{{ customer.nombre }} {{ customer.apellido }}</h1>
+          <span class="text-muted text-sm">#{{ formatId(customer.id) }}</span>
           <span class="status-chip" [ngClass]="customer.estado ? 'active' : 'inactive'">{{ customer.estado ? 'Activo' : 'Inactivo' }}</span>
         </div>
       </div>
-      <button mat-stroked-button [routerLink]="['/customers', customer.id, 'edit']">
+      <button mat-stroked-button *ngIf="puedeEditarCliente" [routerLink]="['/customers', customer.id, 'edit']">
         <mat-icon>edit</mat-icon> Editar
       </button>
     </div>
@@ -24,8 +25,8 @@
         <div class="info-list">
           <div class="info-item"><mat-icon>phone</mat-icon><span>{{ customer.telefono }}</span></div>
           <div class="info-item"><mat-icon>email</mat-icon><span>{{ customer.correo || '—' }}</span></div>
-          <div class="info-item"><mat-icon>cake</mat-icon><span>{{ customer.fechaNacimiento || '—' }}</span></div>
-          <div class="info-item"><mat-icon>event</mat-icon><span>Última visita: {{ customer.ultimaVisita || '—' }}</span></div>
+          <div class="info-item"><mat-icon>cake</mat-icon><span>{{ (customer.fechaNacimiento | date:'dd/MM/yyyy') || '—' }}</span></div>
+          <div class="info-item"><mat-icon>event</mat-icon><span>Última visita: {{ (customer.ultimaVisita | date:'dd/MM/yyyy') || '—' }}</span></div>
           <div class="info-item" *ngIf="customer.notas"><mat-icon>notes</mat-icon><span>{{ customer.notas }}</span></div>
         </div>
       </div>
@@ -35,7 +36,7 @@
         <h3 class="card-title-sm">Programa de Fidelización</h3>
         <div class="stamps-row" *ngIf="loyaltyAccount">
           <div
-            *ngFor="let s of getStampArray(5); let i = index"
+            *ngFor="let s of getStampArray(loyaltyAccount.sellosNecesarios); let i = index"
             class="stamp"
             [class.filled]="i < loyaltyAccount.sellosActuales">
             <mat-icon>loyalty</mat-icon>
@@ -44,10 +45,28 @@
         <p class="stamps-label" *ngIf="loyaltyAccount">
           {{ loyaltyAccount.sellosActuales }} / {{ loyaltyAccount.sellosNecesarios }} sellos
         </p>
-        <div class="reward-available" *ngIf="customer.recompensasDisponibles > 0">
+        <div class="reward-available" *ngIf="customer.recompensasDisponibles > 0 && !editandoRecompensa">
           <mat-icon>card_giftcard</mat-icon>
-          <span>{{ customer.recompensasDisponibles }} recompensa(s) disponible(s)</span>
-          <button mat-flat-button color="accent" (click)="redeemReward()">Canjear</button>
+          <span>{{ customer.recompensasDisponibles }} premio(s) disponible(s): {{ loyaltyAccount?.descripcionRecompensa || descripcionRecompensa }}</span>
+          <button mat-icon-button *ngIf="puedeEditarFidelizacion" (click)="empezarEdicionRecompensa()" matTooltip="Editar premio"><mat-icon>edit</mat-icon></button>
+          <button mat-flat-button color="accent" *ngIf="puedeEditarFidelizacion" (click)="redeemReward()">Canjear</button>
+        </div>
+        <div class="reward-edit" *ngIf="customer.recompensasDisponibles > 0 && editandoRecompensa">
+          <mat-form-field appearance="outline" class="w-full" style="margin-bottom:-1.25em;">
+            <mat-label>Premio para este cliente</mat-label>
+            <mat-select [(ngModel)]="descripcionRecompensaEditada">
+              <mat-option *ngFor="let p of premios" [value]="p.descripcion">{{ p.descripcion }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <div class="mt-8" style="display:flex; gap:8px;">
+            <button mat-stroked-button (click)="cancelarEdicionRecompensa()">Cancelar</button>
+            <button mat-flat-button color="primary" (click)="guardarRecompensa()">Guardar</button>
+          </div>
+        </div>
+        <div class="mt-8" *ngIf="puedeEditarFidelizacion">
+          <button mat-stroked-button (click)="addStamp()">
+            <mat-icon>add_circle</mat-icon> Agregar sello
+          </button>
         </div>
       </div>
 
@@ -60,7 +79,7 @@
                 <mat-icon>receipt_long</mat-icon><p>Sin ventas registradas</p>
               </div>
               <div *ngFor="let s of sales" class="history-item">
-                <div><strong>#{{ s.id }}</strong> · {{ s.fecha }}</div>
+                <div><strong>#{{ s.id }}</strong> · {{ s.fecha | date:'dd/MM/yyyy' }}</div>
                 <div class="text-muted text-sm">{{ s.barberoNombre }}</div>
                 <span class="status-chip" [ngClass]="s.tipoVenta.toLowerCase()">{{ s.tipoVenta }}</span>
                 <strong>S/ {{ s.total | number:'1.2-2' }}</strong>
@@ -73,7 +92,7 @@
                 <mat-icon>event</mat-icon><p>Sin citas registradas</p>
               </div>
               <div *ngFor="let a of appointments" class="history-item">
-                <div><strong>{{ a.fecha }}</strong> {{ a.hora }}</div>
+                <div><strong>{{ a.fecha | date:'dd/MM/yyyy' }}</strong> {{ a.hora | slice:0:5 }}</div>
                 <div class="text-muted text-sm">{{ a.barberoNombre }}</div>
                 <span class="status-chip" [ngClass]="getStatusClass(a.estado)">{{ a.estado }}</span>
                 <span>S/ {{ a.totalEstimado | number:'1.2-2' }}</span>
@@ -88,7 +107,7 @@
                 </mat-icon>
                 <div>
                   <div class="text-sm font-medium">{{ m.motivo }}</div>
-                  <div class="text-muted text-sm">{{ m.fecha }}</div>
+                  <div class="text-muted text-sm">{{ m.fecha | date:'dd/MM/yyyy' }}</div>
                 </div>
                 <span [class.earned]="m.tipo === 'GANADO'" [class.redeemed]="m.tipo === 'CANJEADO'">
                   {{ m.tipo === 'GANADO' ? '+' : '-' }}{{ m.cantidad }} sello(s)

@@ -3,12 +3,14 @@ export type PaymentMethod = 'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA' | 'YAPE' | 
 export type SaleStatus  = 'COMPLETADA' | 'ANULADA' | 'PENDIENTE';
 
 export interface SaleItem {
-  tipo: 'SERVICIO' | 'PRODUCTO';
+  tipo: 'SERVICIO' | 'PRODUCTO' | 'PAQUETE';
   itemId: number;
   nombre: string;
   precio: number;
   cantidad: number;
   subtotal: number;
+  /** Solo frontend: true si el precio de esta línea puede editarse en el carrito (servicios de precio variable). No se envía como tal al backend, pero Jackson lo ignora sin problema. */
+  precioEditable?: boolean;
 }
 
 export interface Sale {

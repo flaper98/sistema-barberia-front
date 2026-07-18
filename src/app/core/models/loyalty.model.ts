@@ -8,6 +8,7 @@ export interface LoyaltyAccount {
   sellosNecesarios: number;
   recompensasCanjeadas: number;
   recompensasDisponibles: number;
+  descripcionRecompensa?: string;
   ultimoMovimiento?: string;
 }
 
@@ -31,7 +32,10 @@ export interface Reward {
 }
 
 export interface LoyaltyConfig {
+  id?: number;
   sellosNecesarios: number;
-  sellosParGanancia: number;
-  recompensasActivas: Reward[];
+  sellosPorGanancia: number;
+  descripcionRecompensa?: string;
+  activo: boolean;
+  updatedAt?: string;
 }

@@ -1,8 +1,8 @@
 @use '@angular/material' as mat;
 
-// ─── Paleta personalizada barbería ───────────────────────────────────────────
-$barber-primary: mat.m2-define-palette(mat.$m2-blue-grey-palette, 800, 600, 900);
-$barber-accent:  mat.m2-define-palette(mat.$m2-amber-palette, A200, A100, A400);
+// ─── Paleta personalizada Árabes Barber Studio (plata/grafito) ───────────────
+$barber-primary: mat.m2-define-palette(mat.$m2-grey-palette, 900, 600, 900);
+$barber-accent:  mat.m2-define-palette(mat.$m2-grey-palette, 400, 200, 600);
 $barber-warn:    mat.m2-define-palette(mat.$m2-red-palette);
 
 $barber-theme: mat.m2-define-light-theme((
@@ -19,11 +19,13 @@ $barber-theme: mat.m2-define-light-theme((
 
 // ─── Variables CSS ────────────────────────────────────────────────────────────
 :root {
-  --color-primary:       #37474F;
-  --color-primary-dark:  #263238;
-  --color-primary-light: #546E7A;
-  --color-accent:        #FFD740;
-  --color-accent-dark:   #FFC400;
+  --color-primary:       #212121;
+  --color-primary-dark:  #141414;
+  --color-primary-light: #757575;
+  --color-accent:        #BDBDBD;
+  --color-accent-dark:   #757575;
+  --color-gold:          #FFD740;
+  --color-gold-dark:     #FFC400;
   --color-warn:          #F44336;
   --color-success:       #4CAF50;
   --color-bg:            #F5F5F5;
@@ -31,10 +33,10 @@ $barber-theme: mat.m2-define-light-theme((
   --color-text:          #212121;
   --color-text-muted:    #757575;
   --color-border:        #E0E0E0;
-  --color-sidebar-bg:    #263238;
+  --color-sidebar-bg:    #141414;
   --color-sidebar-text:  #ECEFF1;
-  --color-sidebar-hover: #37474F;
-  --color-sidebar-active:#FFD740;
+  --color-sidebar-hover: #212121;
+  --color-sidebar-active:#BDBDBD;
   --sidebar-width:       260px;
   --navbar-height:       64px;
   --radius-sm:           4px;
@@ -60,10 +62,29 @@ html, body {
 a { color: var(--color-primary); text-decoration: none; }
 
 // ─── Scrollbar personalizado ──────────────────────────────────────────────────
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+// Mas grueso y con mas contraste que el default: en tablas angostas (donde
+// hay que scrollear horizontal para ver columnas como "Acciones") tiene que
+// notarse a simple vista que se puede scrollear, no solo al pasar el mouse.
+* { scrollbar-width: auto; scrollbar-color: var(--color-text-muted) var(--color-bg); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--color-bg); }
+::-webkit-scrollbar-thumb { background: var(--color-text-muted); border-radius: 6px; border: 2px solid var(--color-bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-primary); }
+// Sin esto, Chrome/Edge en Windows dibuja las flechitas clasicas arriba y
+// abajo del scrollbar (estilo Windows 95) por mas que el resto este
+// personalizado -- quedan pegadas y desentonan con el diseño flat.
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+// El <mat-sidenav> de Angular Material envuelve su contenido en un
+// .mat-drawer-inner-container propio (con su propio overflow-y:auto) que
+// vive DENTRO del encapsulamiento del componente de Material -- los estilos
+// scoped de app-sidebar/main-layout no le llegan, por eso su scrollbar nativo
+// seguia apareciendo aunque el resto del sitio ya tuviera el estilo
+// personalizado. El scroll real del menu ya lo maneja el <nav> interno, asi
+// que a este contenedor se le saca el scroll (y su barra) del todo.
+.mat-drawer-inner-container {
+  overflow: hidden !important;
+}
 
 // ─── Utilidades ───────────────────────────────────────────────────────────────
 .page-container {
@@ -77,6 +98,12 @@ a { color: var(--color-primary); text-decoration: none; }
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   padding: 24px;
+  // Un <table> nativo con table-layout:auto no se achica nunca por debajo
+  // del ancho minimo de su contenido, asi que ni width ni max-width en la
+  // tabla misma alcanzan para forzar su scroll interno -- hace falta que
+  // el contenedor (bloque, no tabla) sea el que scrollee horizontal.
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .card-sm { padding: 16px; }
@@ -121,10 +148,42 @@ a { color: var(--color-primary); text-decoration: none; }
 }
 
 // ─── Tablas ───────────────────────────────────────────────────────────────────
+// overflow-x:auto en la propia tabla (sin cambiar su display:table): si tiene
+// más columnas de las que caben en pantallas angostas, se desplaza solo ella;
+// si el contenido entra en el ancho disponible, las columnas se siguen
+// estirando de forma normal para llenar el contenedor (sin dejar espacio vacío).
 .mat-mdc-table {
+  // <table mat-table> es una tabla HTML nativa (display:table,
+  // table-layout:auto): el ancho de columnas ya se ajusta a su contenido
+  // por defecto. El scroll horizontal cuando no entran todas las columnas
+  // lo maneja el contenedor .card que envuelve la tabla (ver mas arriba) --
+  // un <table> con table-layout:auto nunca se achica mas alla del ancho
+  // minimo de su contenido, asi que overflow/width/max-width puestos en
+  // la tabla misma no alcanzan para lograrlo.
   width: 100%;
+
+  .mat-mdc-header-cell, .mat-mdc-cell {
+    white-space: nowrap;
+    padding: 0 12px;
+  }
+  // Columna "ancla" de cada tabla (nombre/cliente/producto): la unica que
+  // puede envolver texto en varias lineas; el resto de las columnas no
+  // envuelve, se mantienen compactas y si no entran todas, la tabla
+  // scrollea horizontal en vez de aplastarlas.
+  .col-grow {
+    white-space: normal;
+  }
+
   .mat-mdc-header-cell { font-weight: 600; color: var(--color-text); }
   .mat-mdc-row:hover   { background: rgba(0,0,0,.02); }
+}
+
+// El paginador de Material no envuelve sus controles por defecto; en pantallas
+// angostas (móvil) se desbordaba junto con la tabla.
+.mat-mdc-paginator-container {
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: 4px;
 }
 
 // ─── Formularios ─────────────────────────────────────────────────────────────
@@ -158,16 +217,19 @@ a { color: var(--color-primary); text-decoration: none; }
   &:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
   &.primary { border-left-color: var(--color-primary); }
   &.accent  { border-left-color: var(--color-accent); }
+  &.gold    { border-left-color: var(--color-gold); }
   &.success { border-left-color: var(--color-success); }
   &.warn    { border-left-color: var(--color-warn); }
+  &.clickable { cursor: pointer; }
 
   .stat-icon {
     width: 48px; height: 48px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     mat-icon { font-size: 24px; }
-    &.primary { background: rgba(55,71,79,.1);  color: var(--color-primary); }
-    &.accent  { background: rgba(255,215,64,.2); color: #F57F17; }
+    &.primary { background: rgba(33,33,33,.1);   color: var(--color-primary); }
+    &.accent  { background: rgba(189,189,189,.3); color: #424242; }
+    &.gold    { background: rgba(255,215,64,.2); color: #F57F17; }
     &.success { background: rgba(76,175,80,.1);  color: var(--color-success); }
     &.warn    { background: rgba(244,67,54,.1);  color: var(--color-warn); }
   }
@@ -206,6 +268,13 @@ a { color: var(--color-primary); text-decoration: none; }
 // ─── Utilidades extra ─────────────────────────────────────────────────────────
 .search-field { width: 100%; max-width: 400px; }
 
+.filters-row {
+  display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px;
+  .search-field { flex: 1 1 240px; max-width: 320px; }
+  mat-form-field { flex: 0 1 180px; }
+  button { height: 56px; }
+}
+
 .mini-avatar {
   width: 32px; height: 32px; border-radius: 50%;
   background: var(--color-primary); color: #fff;
@@ -213,7 +282,7 @@ a { color: var(--color-primary); text-decoration: none; }
   font-size: .75rem; font-weight: 700; flex-shrink: 0;
 }
 
-.stamp-icon { font-size: 18px; width: 18px; height: 18px; color: var(--color-border); &.has-stamps { color: var(--color-accent-dark); } }
+.stamp-icon { font-size: 18px; width: 18px; height: 18px; color: var(--color-border); &.has-stamps { color: var(--color-gold-dark); } }
 
 .status-chip.accent { background: #FFF8E1; color: #F57F17; }
 
@@ -237,4 +306,24 @@ a { color: var(--color-primary); text-decoration: none; }
 
 .section-sub { font-size: .9rem; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .5px; margin: 20px 0 10px; }
 
+.notice-banner {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,215,64,.15); border: 1px solid var(--color-gold-dark);
+  border-radius: var(--radius-md); padding: 10px 16px;
+  font-size: .875rem;
+  mat-icon { color: var(--color-gold-dark); font-size: 20px; flex-shrink: 0; }
+  button { margin-left: auto; }
+}
+
 .form-layout { max-width: 760px; }
+
+// ─── Impresión (boletas, etc.): solo se imprime el contenido, sin chrome de la app ───
+@media print {
+  app-sidebar, app-navbar, .no-print, .sidebar-nav { display: none !important; }
+  // El sidenav de Angular Material le pone margin-left inline al contenido para
+  // reservarle espacio a la barra lateral; hay que anularlo o el recibo queda
+  // corrido hacia la derecha en vez de centrado en la hoja.
+  .layout-content { margin-left: 0 !important; width: 100% !important; }
+  .main-content { padding: 0 !important; margin: 0 !important; }
+  body, .receipt-page { background: #fff !important; }
+}

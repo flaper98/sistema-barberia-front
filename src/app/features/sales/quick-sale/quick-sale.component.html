@@ -23,11 +23,17 @@
     </div>
   </div>
 
+  <div class="cita-origen-banner" *ngIf="citaOrigen">
+    <mat-icon>event_available</mat-icon>
+    <span>Cobrando la cita de <strong>{{ citaOrigen.clienteNombre }}</strong> · {{ citaOrigen.fecha }} {{ citaOrigen.hora | slice:0:5 }} — al confirmar se marcará como atendida.</span>
+  </div>
+
   <!-- ─── STEP 1: Setup ─────────────────────────────────────────────── -->
   <div class="sale-layout" *ngIf="step === 'setup'">
     <div class="card">
-      <h3 class="section-title"><mat-icon>content_cut</mat-icon> Seleccionar barbero *</h3>
-      <div class="worker-grid">
+      <h3 class="section-title"><mat-icon>content_cut</mat-icon> Barbero</h3>
+
+      <div class="worker-grid" *ngIf="!esBarbero">
         <div
           *ngFor="let w of workers"
           class="worker-card"
@@ -39,23 +45,28 @@
           <mat-icon class="selected-check" *ngIf="selectedWorker?.id === w.id">check_circle</mat-icon>
         </div>
       </div>
+
+      <div class="worker-grid" *ngIf="esBarbero && selectedWorker">
+        <div class="worker-card selected">
+          <div class="worker-avatar">{{ selectedWorker.avatar || (selectedWorker.nombre[0] + selectedWorker.apellido[0]) }}</div>
+          <div class="worker-name">{{ selectedWorker.nombre }}</div>
+          <div class="worker-spec text-muted text-sm">{{ selectedWorker.especialidad }}</div>
+          <mat-icon class="selected-check">check_circle</mat-icon>
+        </div>
+      </div>
+      <p class="text-muted text-sm" *ngIf="esBarbero && !selectedWorker">
+        Tu usuario no está vinculado a un barbero — pedile a un administrador que lo asocie en Usuarios.
+      </p>
     </div>
 
     <div class="card">
-      <h3 class="section-title"><mat-icon>person_search</mat-icon> Cliente (opcional)</h3>
+      <h3 class="section-title"><mat-icon>person_search</mat-icon> Cliente</h3>
       <mat-form-field appearance="outline" class="w-full">
         <mat-label>Buscar cliente</mat-label>
-        <input matInput [(ngModel)]="searchCustomer" placeholder="Nombre, teléfono...">
+        <input matInput [(ngModel)]="searchCustomer" (ngModelChange)="onSearchCustomerChange()" placeholder="Nombre, teléfono...">
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
       <div class="customer-list">
-        <div
-          class="customer-item"
-          [class.selected]="selectedCustomer?.id === null"
-          (click)="selectedCustomer = null">
-          <mat-icon class="anon-icon">person_off</mat-icon>
-          <span>Sin cliente registrado</span>
-        </div>
         <div
           *ngFor="let c of filteredCustomers"
           class="customer-item"
@@ -79,7 +90,7 @@
         Barbero: <strong>{{ selectedWorker.nombre }}</strong>
         <span *ngIf="selectedCustomer"> · Cliente: <strong>{{ selectedCustomer.nombre }}</strong></span>
       </div>
-      <button mat-flat-button color="primary" (click)="goToItems()" [disabled]="!selectedWorker">
+      <button mat-flat-button color="primary" (click)="goToItems()" [disabled]="!selectedWorker || !selectedCustomer">
         Continuar <mat-icon>arrow_forward</mat-icon>
       </button>
     </div>
@@ -105,7 +116,7 @@
                 <div class="item-icon"><mat-icon>spa</mat-icon></div>
                 <div class="item-name">{{ s.nombre }}</div>
                 <div class="item-meta text-muted text-sm">{{ s.duracionMinutos }} min</div>
-                <div class="item-price">S/ {{ s.precio | number:'1.2-2' }}</div>
+                <div class="item-price">{{ s.precioVariable ? 'Desde ' : '' }}S/ {{ s.precio | number:'1.2-2' }}</div>
                 <div class="item-add"><mat-icon>add_circle</mat-icon></div>
               </div>
             </div>
@@ -132,6 +143,31 @@
             </div>
           </div>
         </mat-tab>
+        <mat-tab label="Paquetes">
+          <div class="tab-content">
+            <mat-form-field appearance="outline" class="w-full search-field">
+              <mat-label>Buscar paquete</mat-label>
+              <input matInput [(ngModel)]="searchPackage">
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+            <div class="items-grid">
+              <div
+                *ngFor="let pk of filteredPackages"
+                class="catalog-item package"
+                (click)="addPackage(pk)">
+                <div class="item-icon"><mat-icon>redeem</mat-icon></div>
+                <div class="item-name">{{ pk.nombre }}</div>
+                <div class="item-meta text-muted text-sm">{{ pk.descripcion }}</div>
+                <div class="item-price">S/ {{ pk.precio | number:'1.2-2' }}</div>
+                <div class="item-add"><mat-icon>add_circle</mat-icon></div>
+              </div>
+            </div>
+            <div class="empty-cart" *ngIf="!packages.length">
+              <mat-icon>redeem</mat-icon>
+              <p>Sin paquetes activos. Créalos desde Servicios → Paquetes.</p>
+            </div>
+          </div>
+        </mat-tab>
       </mat-tab-group>
     </div>
 
@@ -152,16 +188,28 @@
         <div class="cart-items" *ngIf="cartItems.length">
           <div class="cart-item" *ngFor="let item of cartItems; let i = index">
             <div class="ci-type">
-              <mat-icon>{{ item.tipo === 'SERVICIO' ? 'spa' : 'inventory_2' }}</mat-icon>
+              <mat-icon>{{ item.tipo === 'SERVICIO' ? 'spa' : item.tipo === 'PAQUETE' ? 'redeem' : 'inventory_2' }}</mat-icon>
             </div>
             <div class="ci-info">
               <div class="ci-name">{{ item.nombre }}</div>
-              <div class="ci-price text-muted text-sm">S/ {{ item.precio | number:'1.2-2' }} c/u</div>
+              <div class="ci-price text-muted text-sm" *ngIf="!item.precioEditable">S/ {{ item.precio | number:'1.2-2' }} c/u</div>
+              <div class="ci-price-editable" *ngIf="item.precioEditable">
+                <span class="text-muted text-sm">S/</span>
+                <input
+                  type="number" min="0" step="0.50" class="ci-price-input"
+                  [ngModel]="item.precio"
+                  (ngModelChange)="updateItemPrice(item, $event)"
+                  matTooltip="Precio variable: ajustalo al cobrar">
+                <span class="text-muted text-sm">c/u</span>
+              </div>
             </div>
             <div class="ci-qty">
               <button mat-icon-button (click)="decreaseItem(item)"><mat-icon>remove</mat-icon></button>
               <span>{{ item.cantidad }}</span>
               <button mat-icon-button (click)="increaseServiceItem(item)" *ngIf="item.tipo === 'SERVICIO'">
+                <mat-icon>add</mat-icon>
+              </button>
+              <button mat-icon-button (click)="increasePackageItem(item)" *ngIf="item.tipo === 'PAQUETE'">
                 <mat-icon>add</mat-icon>
               </button>
             </div>
@@ -214,9 +262,28 @@
           *ngFor="let pm of paymentMethods"
           class="payment-method"
           [class.selected]="selectedPayment === pm.value"
-          (click)="selectedPayment = pm.value">
+          (click)="selectPayment(pm.value)">
           <mat-icon>{{ pm.icon }}</mat-icon>
           <span>{{ pm.label }}</span>
+        </div>
+      </div>
+
+      <!-- Cálculo de vuelto (solo efectivo) -->
+      <div class="cash-calc" *ngIf="selectedPayment === 'EFECTIVO'">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Paga con</mat-label>
+          <span matPrefix>S/&nbsp;</span>
+          <input matInput type="number" min="0" step="0.10" [(ngModel)]="montoRecibido">
+        </mat-form-field>
+        <div class="cash-result" *ngIf="montoRecibido != null">
+          <ng-container *ngIf="!pagoInsuficiente; else insuficiente">
+            <span>Vuelto</span>
+            <strong>S/ {{ vuelto | number:'1.2-2' }}</strong>
+          </ng-container>
+          <ng-template #insuficiente>
+            <span class="warn-color">Falta</span>
+            <strong class="warn-color">S/ {{ (total - montoRecibido!) | number:'1.2-2' }}</strong>
+          </ng-template>
         </div>
       </div>
 
@@ -248,9 +315,14 @@
         <div class="fs-payment"><mat-icon>{{ getSelectedPaymentIcon() }}</mat-icon> {{ getSelectedPaymentLabel() }}</div>
       </div>
 
-      <div class="loyalty-notice" *ngIf="selectedCustomer && hasServicesInCart()">
+      <div class="loyalty-notice" *ngIf="selectedCustomer && hasServicesInCart() && !esBarbero">
         <mat-icon>loyalty</mat-icon>
         <span>Se sumará 1 sello de fidelidad a <strong>{{ selectedCustomer.nombre }}</strong></span>
+      </div>
+
+      <div class="loyalty-notice" *ngIf="esBarbero">
+        <mat-icon>front_hand</mat-icon>
+        <span>Esto crea una <strong>solicitud pendiente de cobro</strong> — recepción la va a aceptar y cobrar. El método de pago que elijas es solo una referencia, recepción puede cambiarlo.</span>
       </div>
 
       <div class="step-actions mt-24">
@@ -262,11 +334,11 @@
           color="primary"
           class="confirm-btn"
           (click)="confirmSale()"
-          [disabled]="loading">
+          [disabled]="!puedeConfirmar">
           <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
           <span *ngIf="!loading">
             <mat-icon>check_circle</mat-icon>
-            Confirmar venta · S/ {{ total | number:'1.2-2' }}
+            {{ esBarbero ? 'Enviar solicitud' : 'Confirmar venta' }} · S/ {{ total | number:'1.2-2' }}
           </span>
         </button>
       </div>
@@ -276,16 +348,25 @@
   <!-- ─── STEP 4: Done ──────────────────────────────────────────────── -->
   <div class="done-layout" *ngIf="step === 'done'">
     <div class="card done-card">
-      <div class="done-icon"><mat-icon>check_circle</mat-icon></div>
-      <h2>¡Venta registrada!</h2>
-      <p class="text-muted">Venta #{{ lastSaleId }} completada exitosamente</p>
+      <div class="done-icon"><mat-icon>{{ lastSaleEstado === 'PENDIENTE' ? 'front_hand' : 'check_circle' }}</mat-icon></div>
+      <h2 *ngIf="lastSaleEstado !== 'PENDIENTE'">¡Venta registrada!</h2>
+      <h2 *ngIf="lastSaleEstado === 'PENDIENTE'">¡Solicitud enviada!</h2>
+      <p class="text-muted" *ngIf="lastSaleEstado !== 'PENDIENTE'">Venta #{{ lastSaleId }} completada exitosamente</p>
+      <p class="text-muted" *ngIf="lastSaleEstado === 'PENDIENTE'">Solicitud #{{ lastSaleId }} enviada — recepción la va a aceptar y cobrar</p>
+      <p class="text-muted" *ngIf="citaOrigen && lastSaleEstado !== 'PENDIENTE'">La cita de {{ citaOrigen.clienteNombre }} quedó marcada como atendida.</p>
 
       <div class="done-summary">
         <div class="ds-row"><span>Barbero</span><strong>{{ selectedWorker?.nombre }}</strong></div>
         <div class="ds-row" *ngIf="selectedCustomer"><span>Cliente</span><strong>{{ selectedCustomer!.nombre }}</strong></div>
-        <div class="ds-row"><span>Total cobrado</span><strong>S/ {{ total | number:'1.2-2' }}</strong></div>
-        <div class="ds-row"><span>Método de pago</span><strong>{{ selectedPayment }}</strong></div>
-        <div class="ds-row loyalty" *ngIf="selectedCustomer && hasServicesInCart()">
+        <div class="ds-row"><span>{{ lastSaleEstado === 'PENDIENTE' ? 'Total a cobrar' : 'Total cobrado' }}</span><strong>S/ {{ total | number:'1.2-2' }}</strong></div>
+        <div class="ds-row" *ngIf="lastSaleEstado !== 'PENDIENTE'"><span>Método de pago</span><strong>{{ selectedPayment }}</strong></div>
+        <div class="ds-row" *ngIf="lastSaleEstado !== 'PENDIENTE' && selectedPayment === 'EFECTIVO' && montoRecibido != null">
+          <span>Pagó con</span><strong>S/ {{ montoRecibido | number:'1.2-2' }}</strong>
+        </div>
+        <div class="ds-row" *ngIf="lastSaleEstado !== 'PENDIENTE' && selectedPayment === 'EFECTIVO' && montoRecibido != null">
+          <span>Vuelto</span><strong>S/ {{ vuelto | number:'1.2-2' }}</strong>
+        </div>
+        <div class="ds-row loyalty" *ngIf="lastSaleEstado !== 'PENDIENTE' && selectedCustomer && hasServicesInCart()">
           <mat-icon>loyalty</mat-icon>
           <span>Sello agregado a {{ selectedCustomer!.nombre }}</span>
         </div>
@@ -293,6 +374,10 @@
 
       <div class="done-actions">
         <button mat-stroked-button routerLink="/sales/list">Ver historial</button>
+        <button mat-stroked-button [routerLink]="['/sales', lastSaleId, 'receipt']">
+          <mat-icon>receipt_long</mat-icon>
+          Ver boleta
+        </button>
         <button mat-flat-button color="primary" (click)="newSale()">
           <mat-icon>add_shopping_cart</mat-icon>
           Nueva venta

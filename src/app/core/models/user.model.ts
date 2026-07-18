@@ -9,6 +9,7 @@ export interface User {
   estado: boolean;
   avatar?: string;
   createdAt: string;
+  barberoId?: number;
 }
 
 export interface AuthCredentials {
@@ -38,6 +39,7 @@ export interface AuthMeResponse {
   email: string;
   rol: string;
   avatar?: string;
+  barberoId?: number;
   estado: boolean;
   ultimoAcceso?: string;
   createdAt: string;

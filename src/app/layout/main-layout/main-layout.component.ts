@@ -13,12 +13,16 @@ export class MainLayoutComponent {
   isMobile = false;
 
   constructor(private breakpoint: BreakpointObserver) {
-    this.breakpoint.observe([Breakpoints.Handset]).subscribe(result => {
+    this.breakpoint.observe([Breakpoints.Handset, Breakpoints.TabletPortrait]).subscribe(result => {
       this.isMobile = result.matches;
     });
   }
 
   toggleSidenav(): void {
     this.sidenav.toggle();
+  }
+
+  onNavItemClick(): void {
+    if (this.isMobile) this.sidenav.close();
   }
 }

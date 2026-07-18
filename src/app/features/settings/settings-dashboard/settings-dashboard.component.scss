@@ -5,3 +5,11 @@
 .roles-list { display: flex; flex-direction: column; gap: 10px; }
 .role-item { display: flex; align-items: center; gap: 12px; }
 .role-badge { background: rgba(55,71,79,.1); color: var(--color-primary); font-size: .75rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; min-width: 90px; text-align: center; text-transform: uppercase; }
+
+.whatsapp-preview {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: rgba(76, 175, 80, .08); border: 1px solid rgba(76, 175, 80, .25);
+  border-radius: var(--radius-sm); padding: 10px 12px; margin: 4px 0 16px;
+  font-size: .82rem; color: var(--color-text);
+  mat-icon { color: var(--color-success); font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+}

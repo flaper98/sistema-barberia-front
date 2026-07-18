@@ -63,7 +63,7 @@
           <mat-icon>event</mat-icon>
           <div>
             <div class="detail-label">Fecha</div>
-            <div class="detail-value">{{ appointment.appointmentDate }}</div>
+            <div class="detail-value">{{ appointment.appointmentDate | date:'dd/MM/yyyy' }}</div>
           </div>
         </div>
 

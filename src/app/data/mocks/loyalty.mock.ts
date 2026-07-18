@@ -27,6 +27,7 @@ export const MOCK_REWARDS: Reward[] = [
 
 export const MOCK_LOYALTY_CONFIG: LoyaltyConfig = {
   sellosNecesarios: 5,
-  sellosParGanancia: 1,
-  recompensasActivas: MOCK_REWARDS.filter(r => r.activo),
+  sellosPorGanancia: 1,
+  descripcionRecompensa: 'Corte gratis',
+  activo: true,
 };

@@ -1,0 +1,68 @@
+<h2 mat-dialog-title>Paquetes / Promociones</h2>
+
+<mat-dialog-content style="min-width:420px; max-width:520px;">
+  <div *ngIf="loading" class="text-center mt-24"><mat-spinner diameter="36" style="margin:auto"></mat-spinner></div>
+
+  <div *ngIf="!loading">
+    <div class="paquete-row" *ngFor="let p of paquetes" style="padding:10px 0; border-bottom:1px solid var(--color-border);">
+      <ng-container *ngIf="editandoId !== p.id">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span [style.opacity]="p.estado ? 1 : 0.5" style="flex:1; font-weight:600;">{{ p.nombre }}</span>
+          <span style="font-weight:600;">S/ {{ p.precio | number:'1.2-2' }}</span>
+          <span class="status-chip" [ngClass]="p.estado ? 'active' : 'inactive'" style="font-size:.7rem;">
+            {{ p.estado ? 'Activo' : 'Inactivo' }}
+          </span>
+          <button mat-icon-button (click)="empezarEdicion(p)" matTooltip="Editar"><mat-icon>edit</mat-icon></button>
+          <button mat-icon-button (click)="toggleEstado(p)" [matTooltip]="p.estado ? 'Desactivar' : 'Activar'">
+            <mat-icon>{{ p.estado ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+          </button>
+        </div>
+        <p class="text-muted text-sm" [style.opacity]="p.estado ? 1 : 0.5" style="margin:4px 0 0;">{{ p.descripcion }}</p>
+      </ng-container>
+
+      <ng-container *ngIf="editandoId === p.id">
+        <form [formGroup]="form" (ngSubmit)="guardar()">
+          <mat-form-field appearance="outline" class="w-full"><mat-label>Nombre</mat-label><input matInput formControlName="nombre"></mat-form-field>
+          <mat-form-field appearance="outline" class="w-full"><mat-label>Precio</mat-label><input matInput type="number" formControlName="precio" min="0"><span matPrefix>S/ </span></mat-form-field>
+          <mat-form-field appearance="outline" class="w-full"><mat-label>Servicios incluidos</mat-label><textarea matInput formControlName="descripcion" rows="2" placeholder="Ej: Corte + Lavado + Styling"></textarea></mat-form-field>
+          <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <button mat-stroked-button type="button" (click)="cancelar()">Cancelar</button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="guardando">
+              <mat-spinner diameter="16" *ngIf="guardando"></mat-spinner>
+              <span *ngIf="!guardando">Guardar</span>
+            </button>
+          </div>
+        </form>
+      </ng-container>
+    </div>
+
+    <div class="empty-state text-center text-muted mt-16" *ngIf="!paquetes.length && !creandoNuevo">
+      Todavía no hay paquetes.
+    </div>
+
+    <div class="mt-16" *ngIf="!creandoNuevo">
+      <button mat-stroked-button color="primary" (click)="empezarNuevo()">
+        <mat-icon>add</mat-icon> Nuevo paquete
+      </button>
+    </div>
+
+    <div class="mt-16" *ngIf="creandoNuevo">
+      <form [formGroup]="form" (ngSubmit)="guardar()">
+        <mat-form-field appearance="outline" class="w-full"><mat-label>Nombre</mat-label><input matInput formControlName="nombre" placeholder="Ej: VIP"></mat-form-field>
+        <mat-form-field appearance="outline" class="w-full"><mat-label>Precio</mat-label><input matInput type="number" formControlName="precio" min="0"><span matPrefix>S/ </span></mat-form-field>
+        <mat-form-field appearance="outline" class="w-full"><mat-label>Servicios incluidos</mat-label><textarea matInput formControlName="descripcion" rows="2" placeholder="Ej: Corte + Lavado + Diseño de cejas"></textarea></mat-form-field>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button mat-stroked-button type="button" (click)="cancelar()">Cancelar</button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="guardando">
+            <mat-spinner diameter="16" *ngIf="guardando"></mat-spinner>
+            <span *ngIf="!guardando">Crear</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-flat-button color="primary" (click)="cerrar()">Listo</button>
+</mat-dialog-actions>

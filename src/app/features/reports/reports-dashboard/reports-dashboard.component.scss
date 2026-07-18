@@ -1,5 +1,56 @@
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
-.reports-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+// ─── Barra de reporte: filtros + pestañas unificados ─────────────────────────
+.report-toolbar {
+  padding: 18px 20px 0;
+}
+
+.filters-row {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 16px; padding-bottom: 4px;
+  mat-form-field { width: 190px; }
+}
+
+.report-tabs {
+  margin: 12px -20px 0;
+
+  ::ng-deep {
+    .mat-mdc-tab-header { border-top: 1px solid var(--color-border); }
+    .mdc-tab { padding: 0 20px; height: 44px; }
+    .mdc-tab__text-label { font-size: .85rem; font-weight: 500; color: var(--color-text-muted); letter-spacing: .01em; }
+    .mdc-tab--active .mdc-tab__text-label { color: var(--color-text); font-weight: 700; }
+    .mdc-tab-indicator__content--underline { border-color: var(--color-gold-dark) !important; border-top-width: 2.5px !important; }
+  }
+}
+
+// ─── Métricas (KPI) ───────────────────────────────────────────────────────────
+.metric-strip {
+  display: flex; flex-wrap: wrap; background: var(--color-surface);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden;
+}
+
+.metric {
+  flex: 1 1 160px; padding: 18px 24px; display: flex; flex-direction: column; gap: 4px;
+  border-right: 1px solid var(--color-border);
+  &:last-child { border-right: none; }
+
+  .metric-value {
+    font-size: 1.65rem; font-weight: 700; letter-spacing: -.01em; color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+  }
+  .metric-label { font-size: .75rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .04em; }
+
+  &.good .metric-value { color: var(--color-success); }
+  &.warn .metric-value { color: var(--color-warn); }
+}
+
+@media (max-width: 640px) {
+  .metric { border-right: none; border-bottom: 1px solid var(--color-border); &:last-child { border-bottom: none; } }
+}
+
+// ─── Reports grid ─────────────────────────────────────────────────────────────
+.reports-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;
+  .col-span-2 { grid-column: span 2; }
+  @media (max-width: 768px) { .col-span-2 { grid-column: span 1; } }
+}
 
 .card-title-rpt {
   font-size: .95rem; font-weight: 600; display: flex; align-items: center; gap: 8px;
@@ -9,11 +60,14 @@
 }
 
 .warn-color { color: var(--color-warn); }
+.earned { color: var(--color-success); }
 
 .rpt-row {
   display: flex; align-items: center; gap: 12px;
-  padding: 8px 0; border-bottom: 1px solid var(--color-border);
+  padding: 10px 0; border-bottom: 1px solid var(--color-border);
   &:last-child { border-bottom: none; }
+
+  .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 }
 
 .rpt-rank {
@@ -25,3 +79,17 @@
 
 .rpt-info { flex: 1; }
 .empty-msg { text-align: center; color: var(--color-text-muted); padding: 24px; font-size: .875rem; }
+
+// ─── Pager compacto de los widgets ────────────────────────────────────────────
+.mini-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+
+  button { width: 32px; height: 32px; line-height: 32px; }
+  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+}

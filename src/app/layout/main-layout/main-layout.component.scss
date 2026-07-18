@@ -20,6 +20,7 @@
 .main-content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   background: var(--color-bg);
   min-height: calc(100vh - var(--navbar-height));
 }

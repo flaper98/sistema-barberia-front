@@ -1,0 +1,91 @@
+<h2 mat-dialog-title>Editar venta #{{ sale.id }}</h2>
+
+<mat-dialog-content style="min-width:380px; max-width:420px;">
+  <div class="text-center mt-24 mb-24" *ngIf="loading">
+    <mat-spinner diameter="36" style="margin:auto"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <div class="order-items mb-16">
+      <div class="order-item" *ngFor="let item of sale.items">
+        <span class="oi-qty">{{ item.cantidad }}x</span>
+        <span class="oi-name">{{ item.nombre }}</span>
+        <span class="oi-price">S/ {{ item.subtotal | number:'1.2-2' }}</span>
+      </div>
+    </div>
+    <p class="text-muted text-sm mb-16">Los ítems no se pueden editar acá. Para corregirlos, anulá la venta y registrala de nuevo.</p>
+
+    <p class="text-muted text-sm mb-8">Barbero</p>
+    <div class="worker-chips mb-16">
+      <div
+        *ngFor="let w of workers"
+        class="worker-chip"
+        [class.selected]="selectedWorker?.id === w.id"
+        (click)="selectedWorker = w">
+        {{ w.nombre }}
+      </div>
+    </div>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Cliente</mat-label>
+      <input matInput [(ngModel)]="searchCustomer" (ngModelChange)="onSearchCustomerChange()" placeholder="Buscar por nombre o teléfono...">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+    <div class="customer-list mb-16">
+      <div
+        *ngFor="let c of filteredCustomers"
+        class="customer-item"
+        [class.selected]="selectedCustomer?.id === c.id"
+        (click)="selectedCustomer = c">
+        <div class="mini-avatar">{{ c.nombre[0] }}{{ c.apellido[0] }}</div>
+        <div class="customer-info">
+          <span class="customer-name">{{ c.nombre }} {{ c.apellido }}</span>
+          <span class="text-muted text-sm">{{ c.telefono }}</span>
+        </div>
+      </div>
+    </div>
+    <p class="selection-summary mb-16" *ngIf="selectedCustomer">Cliente seleccionado: <strong>{{ selectedCustomer.nombre }} {{ selectedCustomer.apellido }}</strong></p>
+
+    <p class="text-muted text-sm mb-8">Método de pago</p>
+    <div class="payment-methods mb-16">
+      <div
+        *ngFor="let pm of paymentMethods"
+        class="payment-method"
+        [class.selected]="metodoPago === pm.value"
+        (click)="metodoPago = pm.value">
+        <mat-icon>{{ pm.icon }}</mat-icon>
+        <span>{{ pm.label }}</span>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Descuento</mat-label>
+        <span matPrefix>S/&nbsp;</span>
+        <input matInput type="number" min="0" [(ngModel)]="descuento">
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Notas</mat-label>
+      <textarea matInput rows="2" [(ngModel)]="notas"></textarea>
+    </mat-form-field>
+
+    <div class="total-bar">
+      <span>Subtotal (fijo)</span>
+      <span class="total-val">S/ {{ sale.subtotal | number:'1.2-2' }}</span>
+    </div>
+    <div class="total-bar">
+      <span>Total con este descuento</span>
+      <span class="total-val">S/ {{ (sale.subtotal - (descuento || 0)) | number:'1.2-2' }}</span>
+    </div>
+  </ng-container>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="guardar()" [disabled]="!puedeGuardar">
+    <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+    <span *ngIf="!saving">Guardar cambios</span>
+  </button>
+</mat-dialog-actions>

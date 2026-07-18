@@ -75,9 +75,15 @@
   .tl-services { color: var(--color-text-muted); }
 
   .tl-footer {
-    display: flex; align-items: center; justify-content: space-between; margin-top: 8px;
+    display: flex; align-items: center; justify-content: space-between; margin-top: 8px; flex-wrap: wrap; gap: 8px;
     .tl-total { font-weight: 700; color: var(--color-primary); }
-    .tl-actions { display: flex; gap: 4px; }
+    .tl-actions {
+      display: flex; align-items: center; gap: 4px;
+      button[mat-stroked-button] {
+        font-size: .75rem; line-height: 30px; padding: 0 10px;
+        mat-icon { font-size: 16px; width: 16px; height: 16px; margin-right: 2px; vertical-align: middle; }
+      }
+    }
   }
 }
 

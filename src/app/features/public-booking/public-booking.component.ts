@@ -15,6 +15,7 @@ import {
   PublicAppointmentRequest,
 } from '../../core/models/public-booking.model';
 import { PublicBookingService } from '../../data/repositories/public-booking.service';
+import { toLocalDateStr } from '../../core/utils/date.util';
 
 @Component({
   selector: 'app-public-booking',
@@ -153,7 +154,7 @@ export class PublicBookingComponent implements OnInit {
     const fecha = this.dateForm.value.fecha;
     if (!fecha) return;
 
-    const dateStr = fecha instanceof Date ? fecha.toISOString().split('T')[0] : fecha;
+    const dateStr = fecha instanceof Date ? toLocalDateStr(fecha) : fecha;
     this.selectedSlot = null;
     this.availability = null;
     this.loadingAvailability = true;
@@ -230,7 +231,7 @@ export class PublicBookingComponent implements OnInit {
 
     const cv = this.customerForm.value;
     const dateValue = this.dateForm.value.fecha;
-    const dateStr = dateValue instanceof Date ? dateValue.toISOString().split('T')[0] : dateValue;
+    const dateStr = dateValue instanceof Date ? toLocalDateStr(dateValue) : dateValue;
 
     const request: PublicAppointmentRequest = {
       customer: {

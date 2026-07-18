@@ -7,6 +7,7 @@ export interface Customer {
   fechaNacimiento?: string;
   cantidadSellos: number;
   recompensasDisponibles: number;
+  descripcionRecompensa?: string;
   ultimaVisita?: string;
   estado: boolean;
   createdAt: string;
@@ -16,6 +17,11 @@ export interface Customer {
 export interface CustomerFilters {
   search?: string;
   estado?: boolean;
+  sellosMin?: number | null;
+  recompensa?: 'con' | 'sin';
+  inactividad?: 'nunca' | '30' | '60' | '90';
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
   page?: number;
   size?: number;
 }

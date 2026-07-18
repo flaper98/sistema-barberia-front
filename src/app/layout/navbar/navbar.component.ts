@@ -1,7 +1,9 @@
 import { Component, EventEmitter, Output } from '@angular/core';
 import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from '../../core/auth/auth.service';
 import { User } from '../../core/models/user.model';
+import { ChangePasswordDialogComponent } from './change-password-dialog/change-password-dialog.component';
 
 @Component({
   selector: 'app-navbar',
@@ -12,7 +14,11 @@ import { User } from '../../core/models/user.model';
 export class NavbarComponent {
   @Output() menuToggle = new EventEmitter<void>();
 
-  constructor(public authService: AuthService, private router: Router) {}
+  constructor(public authService: AuthService, private router: Router, private dialog: MatDialog) {}
+
+  cambiarPassword(): void {
+    this.dialog.open(ChangePasswordDialogComponent, { width: '400px' });
+  }
 
   get currentUser(): User | null {
     return this.authService.currentUser;
@@ -34,7 +40,7 @@ export class NavbarComponent {
       reports:      'Reportes',
       settings:     'Configuración',
     };
-    return titles[path] ?? 'BarberSystem';
+    return titles[path] ?? 'Árabes Barber Studio';
   }
 
   navigateToQuickSale(): void {

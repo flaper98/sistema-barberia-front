@@ -1,0 +1,68 @@
+<div class="page-container fade-in">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Roles y permisos</h1>
+      <p class="page-subtitle">Definí qué sección del sistema puede ver, editar y eliminar cada rol. El Administrador siempre tiene acceso total.</p>
+    </div>
+    <button mat-stroked-button (click)="volver()">
+      <mat-icon>arrow_back</mat-icon> Volver a Usuarios
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="text-center mt-24"><mat-spinner diameter="48" style="margin:auto"></mat-spinner></div>
+
+  <div class="card" *ngIf="!loading">
+    <div class="table-scroll" style="overflow-x:auto;">
+      <table class="permisos-table" style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left; padding:8px 12px;">Sección</th>
+            <th *ngFor="let rol of roles" colspan="3" style="text-align:center; padding:8px 12px; border-left:1px solid var(--divider-color, #444);">
+              {{ rol.label }}
+            </th>
+          </tr>
+          <tr>
+            <th></th>
+            <ng-container *ngFor="let rol of roles">
+              <th style="text-align:center; padding:4px 8px; border-left:1px solid var(--divider-color, #444); font-weight:400;">Ver</th>
+              <th style="text-align:center; padding:4px 8px; font-weight:400;">Editar</th>
+              <th style="text-align:center; padding:4px 8px; font-weight:400;">Eliminar</th>
+            </ng-container>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let fila of filas">
+            <td style="padding:8px 12px; white-space:nowrap;">{{ fila.label }}</td>
+            <ng-container *ngFor="let rol of roles">
+              <td style="text-align:center; padding:4px 8px; border-left:1px solid var(--divider-color, #444);">
+                <mat-checkbox
+                  [checked]="fila.porRol[rol.value].puedeVer"
+                  (change)="onVerChange(fila, rol.value, $event.checked)">
+                </mat-checkbox>
+              </td>
+              <td style="text-align:center; padding:4px 8px;">
+                <mat-checkbox
+                  [checked]="fila.porRol[rol.value].puedeEditar"
+                  (change)="onEditarChange(fila, rol.value, $event.checked)">
+                </mat-checkbox>
+              </td>
+              <td style="text-align:center; padding:4px 8px;">
+                <mat-checkbox
+                  [checked]="fila.porRol[rol.value].puedeEliminar"
+                  (change)="onEliminarChange(fila, rol.value, $event.checked)">
+                </mat-checkbox>
+              </td>
+            </ng-container>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="form-actions" style="margin-top:24px;">
+      <button mat-flat-button color="primary" [disabled]="saving" (click)="guardar()">
+        <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+        <span *ngIf="!saving">Guardar cambios</span>
+      </button>
+    </div>
+  </div>
+</div>

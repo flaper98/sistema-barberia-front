@@ -9,29 +9,54 @@
     </button>
   </div>
 
+  <div class="notice-banner mb-16" *ngIf="mostrandoSoloPendientes">
+    <mat-icon>front_hand</mat-icon>
+    <span>Mostrando solicitudes pendientes de cobro de cualquier fecha.</span>
+    <button mat-button (click)="hoyFiltro()">Ver solo hoy</button>
+  </div>
+
   <div class="card">
-    <div class="flex items-center gap-16 mb-16">
+    <div class="filters-row mb-16">
       <mat-form-field appearance="outline" class="search-field">
         <mat-label>Buscar venta</mat-label>
         <input matInput (keyup)="applyFilter($event)" placeholder="Barbero, cliente...">
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Desde</mat-label>
+        <input matInput [matDatepicker]="dpDesde" [(ngModel)]="fechaDesde" (dateChange)="onFiltersChange()">
+        <mat-datepicker-toggle matSuffix [for]="dpDesde"></mat-datepicker-toggle>
+        <mat-datepicker #dpDesde></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Hasta</mat-label>
+        <input matInput [matDatepicker]="dpHasta" [(ngModel)]="fechaHasta" (dateChange)="onFiltersChange()">
+        <mat-datepicker-toggle matSuffix [for]="dpHasta"></mat-datepicker-toggle>
+        <mat-datepicker #dpHasta></mat-datepicker>
+      </mat-form-field>
+
+      <button mat-stroked-button (click)="hoyFiltro()">Hoy</button>
+      <button mat-stroked-button (click)="limpiarFiltroFecha()">
+        <mat-icon>filter_alt_off</mat-icon> Ver todas las fechas
+      </button>
     </div>
 
     <div *ngIf="loading" class="text-center mt-24"><mat-spinner diameter="40" style="margin:auto"></mat-spinner></div>
 
-    <table mat-table [dataSource]="dataSource" matSort *ngIf="!loading">
+    <table mat-table [dataSource]="dataSource" matSort [hidden]="loading">
       <ng-container matColumnDef="id">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>#</th>
         <td mat-cell *matCellDef="let s">{{ s.id }}</td>
       </ng-container>
       <ng-container matColumnDef="fecha">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha</th>
-        <td mat-cell *matCellDef="let s">{{ s.fecha }}</td>
+        <td mat-cell *matCellDef="let s">{{ s.fecha | date:'dd/MM/yyyy' }}</td>
       </ng-container>
       <ng-container matColumnDef="clienteNombre">
-        <th mat-header-cell *matHeaderCellDef>Cliente</th>
-        <td mat-cell *matCellDef="let s">{{ s.clienteNombre || 'Sin cliente' }}</td>
+        <th mat-header-cell *matHeaderCellDef class="col-grow">Cliente</th>
+        <td mat-cell *matCellDef="let s" class="col-grow">{{ s.clienteNombre || 'Sin cliente' }}</td>
       </ng-container>
       <ng-container matColumnDef="barberoNombre">
         <th mat-header-cell *matHeaderCellDef>Barbero</th>
@@ -55,6 +80,20 @@
           <span class="status-chip" [ngClass]="s.estado.toLowerCase()">{{ s.estado }}</span>
         </td>
       </ng-container>
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef>Acciones</th>
+        <td mat-cell *matCellDef="let s">
+          <button mat-flat-button color="accent" *ngIf="s.estado === 'PENDIENTE' && puedeCobrar" (click)="aceptarYCobrar(s)" matTooltip="Aceptar y cobrar">
+            <mat-icon>point_of_sale</mat-icon> Aceptar y cobrar
+          </button>
+          <button mat-icon-button [routerLink]="['/sales', s.id, 'receipt']" matTooltip="Ver boleta">
+            <mat-icon>receipt_long</mat-icon>
+          </button>
+          <button mat-icon-button *ngIf="puedeEditar && s.estado !== 'ANULADA'" (click)="editarVenta(s)" matTooltip="Editar venta">
+            <mat-icon>edit</mat-icon>
+          </button>
+        </td>
+      </ng-container>
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
       <tr class="mat-row" *matNoDataRow>
@@ -62,6 +101,6 @@
       </tr>
     </table>
 
-    <mat-paginator [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons *ngIf="!loading"></mat-paginator>
+    <mat-paginator [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons [hidden]="loading"></mat-paginator>
   </div>
 </div>

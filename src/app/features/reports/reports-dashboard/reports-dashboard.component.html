@@ -1,55 +1,235 @@
 <div class="page-container fade-in">
-  <div class="page-header"><h1 class="page-title">Reportes</h1><p class="page-subtitle">Resumen general del negocio</p></div>
+  <div class="page-header">
+    <div><h1 class="page-title">Reportes</h1><p class="page-subtitle">Resumen general del negocio</p></div>
+    <button mat-flat-button color="primary" (click)="exportar()">
+      <mat-icon>download</mat-icon> Exportar a Excel
+    </button>
+  </div>
+
+  <!-- Barra de reporte: filtros + pestañas unificados -->
+  <div class="report-toolbar card mb-24">
+    <div class="filters-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Desde</mat-label>
+        <input matInput [matDatepicker]="dpDesde" [(ngModel)]="fechaDesde" (dateChange)="onFiltersChange()">
+        <mat-datepicker-toggle matSuffix [for]="dpDesde"></mat-datepicker-toggle>
+        <mat-datepicker #dpDesde></mat-datepicker>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Hasta</mat-label>
+        <input matInput [matDatepicker]="dpHasta" [(ngModel)]="fechaHasta" (dateChange)="onFiltersChange()">
+        <mat-datepicker-toggle matSuffix [for]="dpHasta"></mat-datepicker-toggle>
+        <mat-datepicker #dpHasta></mat-datepicker>
+      </mat-form-field>
+      <mat-form-field appearance="outline" *ngIf="activeTab === 0 || activeTab === 1">
+        <mat-label>Barbero</mat-label>
+        <mat-select [(ngModel)]="barberoId" (selectionChange)="onFiltersChange()">
+          <mat-option [value]="null">Todos</mat-option>
+          <mat-option *ngFor="let w of workers" [value]="w.id">{{ w.nombre }} {{ w.apellido }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" *ngIf="activeTab === 2">
+        <mat-label>Tipo</mat-label>
+        <mat-select [(ngModel)]="tipoFinanza" (selectionChange)="onFiltersChange()">
+          <mat-option [value]="null">Todos</mat-option>
+          <mat-option value="INGRESO">Ingreso</mat-option>
+          <mat-option value="EGRESO">Egreso</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-spinner diameter="20" *ngIf="filtering"></mat-spinner>
+    </div>
+
+    <mat-tab-group [(selectedIndex)]="activeTab" class="report-tabs" mat-stretch-tabs="false">
+      <mat-tab label="Ventas"></mat-tab>
+      <mat-tab label="Citas"></mat-tab>
+      <mat-tab label="Financiero"></mat-tab>
+      <mat-tab label="Fidelización"></mat-tab>
+    </mat-tab-group>
+  </div>
 
   <div *ngIf="loading" class="text-center mt-24"><mat-spinner diameter="48" style="margin:auto"></mat-spinner></div>
 
   <ng-container *ngIf="!loading">
-    <!-- KPIs -->
-    <div class="stats-grid mb-24">
-      <div class="stat-card primary"><div class="stat-icon primary"><mat-icon>receipt</mat-icon></div><div class="stat-info"><div class="stat-value">{{ totalVentas }}</div><div class="stat-label">Total ventas</div></div></div>
-      <div class="stat-card accent"><div class="stat-icon accent"><mat-icon>payments</mat-icon></div><div class="stat-info"><div class="stat-value">S/ {{ totalIngresos | number:'1.2-2' }}</div><div class="stat-label">Total ingresos</div></div></div>
-      <div class="stat-card success"><div class="stat-icon success"><mat-icon>event_available</mat-icon></div><div class="stat-info"><div class="stat-value">{{ citasAtendidas }}</div><div class="stat-label">Citas atendidas</div></div></div>
-      <div class="stat-card warn"><div class="stat-icon warn"><mat-icon>event_busy</mat-icon></div><div class="stat-info"><div class="stat-value">{{ citasCanceladas }}</div><div class="stat-label">Citas canceladas</div></div></div>
-    </div>
 
-    <div class="reports-grid">
-      <!-- Ingresos por barbero -->
-      <div class="card">
-        <h3 class="card-title-rpt"><mat-icon>content_cut</mat-icon> Ingresos por barbero</h3>
-        <div *ngFor="let w of workerReports; let i = index" class="rpt-row">
-          <span class="rpt-rank">{{ i+1 }}</span>
-          <div class="rpt-info">
-            <div class="font-medium">{{ w.nombre }}</div>
-            <div class="text-muted text-sm">{{ w.ventas }} venta(s) · Comisión: S/ {{ w.comision | number:'1.2-2' }}</div>
+    <!-- Tab: Ventas -->
+    <ng-container *ngIf="activeTab === 0">
+      <div class="metric-strip mb-24">
+        <div class="metric"><span class="metric-value">{{ totalVentas }}</span><span class="metric-label">Total ventas</span></div>
+        <div class="metric"><span class="metric-value">S/ {{ totalIngresos | number:'1.2-2' }}</span><span class="metric-label">Total ingresos</span></div>
+      </div>
+
+      <div class="card mb-24">
+        <h3 class="card-title-rpt"><mat-icon>receipt_long</mat-icon> Listado de ventas</h3>
+        <table mat-table [dataSource]="ventasDataSource" class="w-full">
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef>#</th>
+            <td mat-cell *matCellDef="let v">{{ v.id }}</td>
+          </ng-container>
+          <ng-container matColumnDef="fecha">
+            <th mat-header-cell *matHeaderCellDef>Fecha</th>
+            <td mat-cell *matCellDef="let v">{{ v.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="clienteNombre">
+            <th mat-header-cell *matHeaderCellDef class="col-grow">Cliente</th>
+            <td mat-cell *matCellDef="let v" class="col-grow">{{ v.clienteNombre || 'Sin cliente' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="barberoNombre">
+            <th mat-header-cell *matHeaderCellDef>Barbero</th>
+            <td mat-cell *matCellDef="let v">{{ v.barberoNombre }}</td>
+          </ng-container>
+          <ng-container matColumnDef="metodoPago">
+            <th mat-header-cell *matHeaderCellDef>Método de pago</th>
+            <td mat-cell *matCellDef="let v">{{ v.metodoPago }}</td>
+          </ng-container>
+          <ng-container matColumnDef="total">
+            <th mat-header-cell *matHeaderCellDef>Total</th>
+            <td mat-cell *matCellDef="let v">S/ {{ v.total | number:'1.2-2' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let v"><span class="status-chip" [ngClass]="v.estado.toLowerCase()">{{ v.estado }}</span></td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="ventasColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: ventasColumns;"></tr>
+        </table>
+        <div class="empty-msg" *ngIf="!ventas.length">Sin ventas en este periodo</div>
+        <mat-paginator [pageSize]="20" [pageSizeOptions]="[20,50,100]" showFirstLastButtons [hidden]="!ventas.length"></mat-paginator>
+      </div>
+
+      <div class="reports-grid">
+        <div class="card">
+          <h3 class="card-title-rpt"><mat-icon>content_cut</mat-icon> Ingresos por barbero</h3>
+          <div *ngFor="let w of pagedVentasPorBarbero; let i = index" class="rpt-row">
+            <span class="rpt-rank">{{ rankDeWidget('ventasPorBarbero', i) }}</span>
+            <div class="rpt-info">
+              <div class="font-medium">{{ w.barberoNombre }}</div>
+              <div class="text-muted text-sm">{{ w.totalVentas }} venta(s) · Comisión: S/ {{ w.comision | number:'1.2-2' }}</div>
+            </div>
+            <strong class="num">S/ {{ w.ingresos | number:'1.2-2' }}</strong>
           </div>
-          <strong>S/ {{ w.total | number:'1.2-2' }}</strong>
-        </div>
-        <div class="empty-msg" *ngIf="!workerReports.length">Sin datos</div>
-      </div>
-
-      <!-- Servicios más vendidos -->
-      <div class="card">
-        <h3 class="card-title-rpt"><mat-icon>spa</mat-icon> Servicios más vendidos</h3>
-        <div *ngFor="let s of serviceReports; let i = index" class="rpt-row">
-          <span class="rpt-rank">{{ i+1 }}</span>
-          <div class="rpt-info">
-            <div class="font-medium">{{ s.nombre }}</div>
-            <div class="text-muted text-sm">{{ s.cantidad }} unidades</div>
+          <div class="empty-msg" *ngIf="!ventasPorBarbero.length">Sin datos</div>
+          <div class="mini-pager" *ngIf="totalPaginasWidget('ventasPorBarbero') > 1">
+            <button mat-icon-button [disabled]="widgetPages.ventasPorBarbero === 0" (click)="cambiarPaginaWidget('ventasPorBarbero', -1)"><mat-icon>chevron_left</mat-icon></button>
+            <span class="text-muted text-sm">{{ widgetPages.ventasPorBarbero + 1 }} / {{ totalPaginasWidget('ventasPorBarbero') }}</span>
+            <button mat-icon-button [disabled]="widgetPages.ventasPorBarbero >= totalPaginasWidget('ventasPorBarbero') - 1" (click)="cambiarPaginaWidget('ventasPorBarbero', 1)"><mat-icon>chevron_right</mat-icon></button>
           </div>
-          <strong>S/ {{ s.total | number:'1.2-2' }}</strong>
         </div>
-        <div class="empty-msg" *ngIf="!serviceReports.length">Sin datos</div>
+
+        <div class="card">
+          <h3 class="card-title-rpt"><mat-icon>spa</mat-icon> Servicios más vendidos</h3>
+          <div *ngFor="let s of pagedTopServicios; let i = index" class="rpt-row">
+            <span class="rpt-rank">{{ rankDeWidget('topServicios', i) }}</span>
+            <div class="rpt-info">
+              <div class="font-medium">{{ s.nombre }}</div>
+              <div class="text-muted text-sm">{{ s.vecesVendido }} vez(es) · Promedio S/ {{ s.precioPromedio | number:'1.2-2' }}</div>
+            </div>
+            <strong class="num">S/ {{ s.ingresos | number:'1.2-2' }}</strong>
+          </div>
+          <div class="empty-msg" *ngIf="!topServicios.length">Sin datos</div>
+          <div class="mini-pager" *ngIf="totalPaginasWidget('topServicios') > 1">
+            <button mat-icon-button [disabled]="widgetPages.topServicios === 0" (click)="cambiarPaginaWidget('topServicios', -1)"><mat-icon>chevron_left</mat-icon></button>
+            <span class="text-muted text-sm">{{ widgetPages.topServicios + 1 }} / {{ totalPaginasWidget('topServicios') }}</span>
+            <button mat-icon-button [disabled]="widgetPages.topServicios >= totalPaginasWidget('topServicios') - 1" (click)="cambiarPaginaWidget('topServicios', 1)"><mat-icon>chevron_right</mat-icon></button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title-rpt"><mat-icon>inventory_2</mat-icon> Productos más vendidos</h3>
+          <div *ngFor="let p of pagedTopProductos; let i = index" class="rpt-row">
+            <span class="rpt-rank">{{ rankDeWidget('topProductos', i) }}</span>
+            <div class="rpt-info">
+              <div class="font-medium">{{ p.nombre }}</div>
+              <div class="text-muted text-sm">{{ p.unidadesVendidas }} unidad(es) · Stock actual: {{ p.stockActual }}</div>
+            </div>
+            <strong class="num">S/ {{ p.ingresos | number:'1.2-2' }}</strong>
+          </div>
+          <div class="empty-msg" *ngIf="!topProductos.length">Sin datos</div>
+          <div class="mini-pager" *ngIf="totalPaginasWidget('topProductos') > 1">
+            <button mat-icon-button [disabled]="widgetPages.topProductos === 0" (click)="cambiarPaginaWidget('topProductos', -1)"><mat-icon>chevron_left</mat-icon></button>
+            <span class="text-muted text-sm">{{ widgetPages.topProductos + 1 }} / {{ totalPaginasWidget('topProductos') }}</span>
+            <button mat-icon-button [disabled]="widgetPages.topProductos >= totalPaginasWidget('topProductos') - 1" (click)="cambiarPaginaWidget('topProductos', 1)"><mat-icon>chevron_right</mat-icon></button>
+          </div>
+        </div>
+
+        <div class="card" *ngIf="lowStock.length > 0">
+          <h3 class="card-title-rpt warn-color"><mat-icon>warning</mat-icon> Productos con stock bajo</h3>
+          <div *ngFor="let p of pagedLowStock" class="rpt-row">
+            <mat-icon class="warn-color">inventory_2</mat-icon>
+            <div class="rpt-info flex-1"><div class="font-medium">{{ p.nombre }}</div><div class="text-muted text-sm">{{ p.categoria }}</div></div>
+            <span class="status-chip low-stock">Stock: {{ p.stockActual }} / mín {{ p.stockMinimo }}</span>
+          </div>
+          <div class="mini-pager" *ngIf="totalPaginasWidget('lowStock') > 1">
+            <button mat-icon-button [disabled]="widgetPages.lowStock === 0" (click)="cambiarPaginaWidget('lowStock', -1)"><mat-icon>chevron_left</mat-icon></button>
+            <span class="text-muted text-sm">{{ widgetPages.lowStock + 1 }} / {{ totalPaginasWidget('lowStock') }}</span>
+            <button mat-icon-button [disabled]="widgetPages.lowStock >= totalPaginasWidget('lowStock') - 1" (click)="cambiarPaginaWidget('lowStock', 1)"><mat-icon>chevron_right</mat-icon></button>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Tab: Citas -->
+    <ng-container *ngIf="activeTab === 1">
+      <div class="metric-strip">
+        <div class="metric good"><span class="metric-value">{{ citasAtendidas }}</span><span class="metric-label">Citas atendidas</span></div>
+        <div class="metric warn"><span class="metric-value">{{ citasCanceladas }}</span><span class="metric-label">Citas canceladas</span></div>
+      </div>
+    </ng-container>
+
+    <!-- Tab: Financiero -->
+    <ng-container *ngIf="activeTab === 2">
+      <div class="card mb-24" *ngIf="financeSummary">
+        <h3 class="card-title-rpt"><mat-icon>account_balance</mat-icon> Resumen del periodo</h3>
+        <div class="metric-strip">
+          <div class="metric good"><span class="metric-value">S/ {{ financeSummary.totalIngresos | number:'1.2-2' }}</span><span class="metric-label">Ingresos</span></div>
+          <div class="metric warn"><span class="metric-value">S/ {{ financeSummary.totalEgresos | number:'1.2-2' }}</span><span class="metric-label">Egresos</span></div>
+          <div class="metric" [ngClass]="financeSummary.utilidad >= 0 ? 'good' : 'warn'"><span class="metric-value">S/ {{ financeSummary.utilidad | number:'1.2-2' }}</span><span class="metric-label">Utilidad</span></div>
+        </div>
       </div>
 
-      <!-- Stock bajo -->
-      <div class="card" *ngIf="lowStock.length > 0">
-        <h3 class="card-title-rpt warn-color"><mat-icon>warning</mat-icon> Productos con stock bajo</h3>
-        <div *ngFor="let p of lowStock" class="rpt-row">
-          <mat-icon class="warn-color">inventory_2</mat-icon>
-          <div class="rpt-info flex-1"><div class="font-medium">{{ p.nombre }}</div><div class="text-muted text-sm">{{ p.categoria }}</div></div>
-          <span class="status-chip low-stock">Stock: {{ p.stockActual }} / mín {{ p.stockMinimo }}</span>
+      <div class="card">
+        <h3 class="card-title-rpt"><mat-icon>account_balance_wallet</mat-icon> Movimientos</h3>
+        <div *ngFor="let e of financeEntries" class="rpt-row">
+          <mat-icon [class.earned]="e.tipo === 'INGRESO'" [class.warn-color]="e.tipo === 'EGRESO'">
+            {{ e.tipo === 'INGRESO' ? 'arrow_upward' : 'arrow_downward' }}
+          </mat-icon>
+          <div class="rpt-info flex-1">
+            <div class="font-medium">{{ e.descripcion }}</div>
+            <div class="text-muted text-sm">{{ e.categoria }} · {{ e.fecha | date:'dd/MM/yyyy' }} · {{ e.usuarioNombre }}</div>
+          </div>
+          <strong class="num" [class.earned]="e.tipo === 'INGRESO'" [class.warn-color]="e.tipo === 'EGRESO'">
+            {{ e.tipo === 'INGRESO' ? '+' : '-' }} S/ {{ e.monto | number:'1.2-2' }}
+          </strong>
+        </div>
+        <div class="empty-msg" *ngIf="!financeEntries.length">Sin movimientos en este periodo</div>
+      </div>
+    </ng-container>
+
+    <!-- Tab: Fidelización -->
+    <ng-container *ngIf="activeTab === 3">
+      <div class="card" *ngIf="loyaltySummary">
+        <h3 class="card-title-rpt"><mat-icon>loyalty</mat-icon> Fidelización</h3>
+        <div class="rpt-row">
+          <div class="rpt-info">Clientes con cuenta de sellos</div>
+          <strong class="num">{{ loyaltySummary.totalClientesConCuenta }}</strong>
+        </div>
+        <div class="rpt-row">
+          <div class="rpt-info">Con recompensas disponibles</div>
+          <strong class="num">{{ loyaltySummary.clientesConRecompensas }}</strong>
+        </div>
+        <div class="rpt-row">
+          <div class="rpt-info">Sellos otorgados (total)</div>
+          <strong class="num">{{ loyaltySummary.totalSellosOtorgados }}</strong>
+        </div>
+        <div class="rpt-row">
+          <div class="rpt-info">Recompensas canjeadas</div>
+          <strong class="num">{{ loyaltySummary.totalRecompensasCanjeadas }}</strong>
+        </div>
+        <div class="rpt-row">
+          <div class="rpt-info">Recompensas pendientes de canjear</div>
+          <strong class="num">{{ loyaltySummary.totalRecompensasPendientes }}</strong>
         </div>
       </div>
-    </div>
+    </ng-container>
+
   </ng-container>
 </div>

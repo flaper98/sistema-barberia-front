@@ -13,7 +13,7 @@ export class CustomerService {
 
   constructor(private http: HttpClient) {}
 
-  getAll(page = 0, size = 100): Observable<Customer[]> {
+  getAll(page = 0, size = 2000): Observable<Customer[]> {
     const params = new HttpParams().set('page', page).set('size', size);
     return this.http
       .get<ApiResponse<PageResponse<Customer>>>(this.url, { params })
@@ -27,13 +27,28 @@ export class CustomerService {
   }
 
   search(filters: CustomerFilters): Observable<Customer[]> {
+    return this.searchPaged(filters).pipe(map(r => r.content));
+  }
+
+  /**
+   * Busqueda paginada del lado del servidor (filtros de texto/sellos/
+   * recompensa/inactividad se resuelven en la base, no trayendo todo al
+   * frontend). Devuelve la pagina completa (con totalElements) para poder
+   * manejar el paginador de Material sin cargar de mas.
+   */
+  searchPaged(filters: CustomerFilters): Observable<PageResponse<Customer>> {
     let params = new HttpParams();
     if (filters.search) params = params.set('search', filters.search);
+    if (filters.sellosMin != null) params = params.set('sellosMin', filters.sellosMin);
+    if (filters.recompensa) params = params.set('recompensa', filters.recompensa);
+    if (filters.inactividad) params = params.set('inactividad', filters.inactividad);
+    if (filters.sortBy) params = params.set('sortBy', filters.sortBy);
+    if (filters.sortDir) params = params.set('sortDir', filters.sortDir);
     if (filters.page !== undefined) params = params.set('page', filters.page);
     if (filters.size !== undefined) params = params.set('size', filters.size);
     return this.http
       .get<ApiResponse<PageResponse<Customer>>>(this.url, { params })
-      .pipe(map(r => r.data?.content ?? []));
+      .pipe(map(r => r.data ?? { content: [], page: 0, size: 0, totalElements: 0, totalPages: 0, first: true, last: true }));
   }
 
   create(data: Omit<Customer, 'id' | 'createdAt' | 'cantidadSellos' | 'recompensasDisponibles'>): Observable<Customer> {

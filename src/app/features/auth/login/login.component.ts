@@ -16,13 +16,6 @@ export class LoginComponent implements OnInit {
   hidePassword = true;
   errorMessage = '';
 
-  demoAccounts = [
-    { email: 'admin@barbersystem.com',  rol: 'Administrador' },
-    { email: 'miguel@barbersystem.com', rol: 'Barbero' },
-    { email: 'sofia@barbersystem.com',  rol: 'Cajero' },
-    { email: 'lucia@barbersystem.com',  rol: 'Recepción' },
-  ];
-
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
@@ -35,10 +28,6 @@ export class LoginComponent implements OnInit {
       email:    ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(4)]],
     });
-  }
-
-  fillDemo(email: string): void {
-    this.loginForm.patchValue({ email, password: '123456' });
   }
 
   onSubmit(): void {

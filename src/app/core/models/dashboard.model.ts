@@ -10,7 +10,5 @@ export interface DashboardStats {
 }
 
 export interface DashboardChartData {
-  ventasSemana: { dia: string; monto: number }[];
   serviciosMasVendidos: { nombre: string; cantidad: number }[];
-  citasPorEstado: { estado: string; cantidad: number }[];
 }

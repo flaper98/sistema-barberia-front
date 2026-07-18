@@ -29,6 +29,9 @@
       <span class="role-chip">{{ currentUser.rol }}</span>
     </div>
     <mat-divider></mat-divider>
+    <button mat-menu-item (click)="cambiarPassword()">
+      <mat-icon>lock_reset</mat-icon> Cambiar contraseña
+    </button>
     <button mat-menu-item routerLink="/settings" *ngIf="authService.hasRole(['ADMIN'])">
       <mat-icon>settings</mat-icon> Configuración
     </button>

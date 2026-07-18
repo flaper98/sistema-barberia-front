@@ -1,0 +1,67 @@
+<div class="page-container fade-in">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{{ isEdit ? 'Editar usuario' : 'Nuevo usuario' }}</h1>
+      <p class="page-subtitle">Cuenta de acceso al sistema</p>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="text-center mt-24"><mat-spinner diameter="48" style="margin:auto"></mat-spinner></div>
+
+  <div class="form-layout" *ngIf="!loading">
+    <div class="card">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre *</mat-label>
+            <input matInput formControlName="nombre">
+            <mat-error>El nombre es requerido</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Apellido *</mat-label>
+            <input matInput formControlName="apellido">
+            <mat-error>El apellido es requerido</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Email *</mat-label>
+            <input matInput type="email" formControlName="email">
+            <mat-error>Ingresa un email válido</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ isEdit ? 'Nueva contraseña' : 'Contraseña *' }}</mat-label>
+            <input matInput type="password" formControlName="password">
+            <mat-hint *ngIf="isEdit">Déjalo en blanco para no cambiarla</mat-hint>
+            <mat-error>Mínimo 6 caracteres</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Rol *</mat-label>
+            <mat-select formControlName="rol">
+              <mat-option *ngFor="let r of roles" [value]="r.value">{{ r.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" *ngIf="isBarberRole">
+            <mat-label>Barbero vinculado</mat-label>
+            <mat-select formControlName="barberoId">
+              <mat-option [value]="null">Sin vincular</mat-option>
+              <mat-option *ngFor="let w of availableWorkers" [value]="w.id">{{ w.nombre }} {{ w.apellido }}</mat-option>
+            </mat-select>
+            <mat-hint>Conecta esta cuenta con su perfil de barbero para que vea sus propias ventas en el Dashboard</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <div class="form-actions">
+          <button mat-stroked-button type="button" (click)="cancel()">Cancelar</button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="saving">
+            <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+            <span *ngIf="!saving">{{ isEdit ? 'Actualizar' : 'Crear usuario' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

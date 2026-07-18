@@ -1,0 +1,48 @@
+<h2 mat-dialog-title>Categorías de productos</h2>
+
+<mat-dialog-content style="min-width:380px;">
+  <div *ngIf="loading" class="text-center mt-24"><mat-spinner diameter="36" style="margin:auto"></mat-spinner></div>
+
+  <div *ngIf="!loading">
+    <div class="category-row" *ngFor="let c of categorias" style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--color-border);">
+      <ng-container *ngIf="editandoId !== c.id">
+        <span [style.opacity]="c.estado ? 1 : 0.5" style="flex:1;">{{ c.nombre }}</span>
+        <span class="status-chip" [ngClass]="c.estado ? 'active' : 'inactive'" style="font-size:.7rem;">
+          {{ c.estado ? 'Activa' : 'Inactiva' }}
+        </span>
+        <button mat-icon-button (click)="empezarEdicion(c)" matTooltip="Renombrar"><mat-icon>edit</mat-icon></button>
+        <button mat-icon-button (click)="toggleEstado(c)" [matTooltip]="c.estado ? 'Desactivar' : 'Activar'">
+          <mat-icon>{{ c.estado ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+        </button>
+      </ng-container>
+
+      <ng-container *ngIf="editandoId === c.id">
+        <mat-form-field appearance="outline" style="flex:1; margin-bottom:-1.25em;">
+          <input matInput [(ngModel)]="nombreEditado" (keyup.enter)="guardarEdicion(c)" maxlength="80">
+        </mat-form-field>
+        <button mat-icon-button color="primary" (click)="guardarEdicion(c)" matTooltip="Guardar"><mat-icon>check</mat-icon></button>
+        <button mat-icon-button (click)="cancelarEdicion()" matTooltip="Cancelar"><mat-icon>close</mat-icon></button>
+      </ng-container>
+    </div>
+
+    <div class="empty-state text-center text-muted mt-16" *ngIf="!categorias.length">
+      Todavía no hay categorías.
+    </div>
+
+    <div style="display:flex; align-items:flex-start; gap:8px; margin-top:20px;">
+      <mat-form-field appearance="outline" style="flex:1;">
+        <mat-label>Nueva categoría</mat-label>
+        <input matInput [formControl]="nuevaCategoria" (keyup.enter)="agregar()" placeholder="Ej: Cera, Tijeras...">
+        <mat-error *ngIf="nuevaCategoria.hasError('required')">Requerido</mat-error>
+      </mat-form-field>
+      <button mat-flat-button color="primary" style="margin-top:4px;" [disabled]="guardandoNueva" (click)="agregar()">
+        <mat-spinner diameter="16" *ngIf="guardandoNueva"></mat-spinner>
+        <span *ngIf="!guardandoNueva">Agregar</span>
+      </button>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-flat-button color="primary" (click)="cerrar()">Listo</button>
+</mat-dialog-actions>

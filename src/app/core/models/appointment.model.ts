@@ -2,7 +2,7 @@ export type AppointmentStatus = 'PENDIENTE' | 'CONFIRMADA' | 'ATENDIDA' | 'CANCE
 
 export interface Appointment {
   id: number;
-  clienteId: number;
+  clienteId: number | null;
   clienteNombre: string;
   barberoId: number;
   barberoNombre: string;

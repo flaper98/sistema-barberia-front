@@ -1,4 +1,4 @@
-export type ProductCategory = 'SHAMPOO' | 'POMADA' | 'ACEITE' | 'NAVAJA' | 'ACCESORIO' | 'OTRO';
+export type ProductCategory = string;
 export type StockMovementType = 'ENTRADA' | 'SALIDA' | 'AJUSTE';
 
 export interface Product {
@@ -20,7 +20,7 @@ export interface StockMovement {
   productoNombre: string;
   tipoMovimiento: StockMovementType;
   cantidad: number;
-  fecha: string;
+  createdAt: string;
   motivo: string;
   usuarioId: number;
   usuarioNombre: string;

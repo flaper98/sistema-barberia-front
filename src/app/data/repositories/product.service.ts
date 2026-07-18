@@ -21,8 +21,9 @@ export class ProductService {
   }
 
   getLowStock(): Observable<Product[]> {
+    const params = new HttpParams().set('page', 0).set('size', 100);
     return this.http
-      .get<ApiResponse<PageResponse<Product>>>(`${this.url}/low-stock`)
+      .get<ApiResponse<PageResponse<Product>>>(`${this.url}/low-stock`, { params })
       .pipe(map(r => r.data?.content ?? []));
   }
 
@@ -65,7 +66,9 @@ export class ProductService {
   }
 
   delete(id: number): Observable<void> {
-    return this.toggleStatus(id).pipe(map(() => undefined));
+    return this.http
+      .delete<ApiResponse<void>>(`${this.url}/${id}`)
+      .pipe(map(() => undefined));
   }
 
   getMovements(page = 0, size = 100): Observable<StockMovement[]> {
