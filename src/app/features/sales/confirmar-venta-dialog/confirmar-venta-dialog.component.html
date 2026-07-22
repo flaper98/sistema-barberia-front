@@ -1,37 +1,146 @@
 <h2 mat-dialog-title>Aceptar y cobrar solicitud #{{ sale.id }}</h2>
 
-<mat-dialog-content style="min-width:340px;">
-  <div class="info-list mb-16">
-    <div class="info-item"><mat-icon>content_cut</mat-icon><span>{{ sale.barberoNombre }}</span></div>
-    <div class="info-item" *ngIf="sale.clienteNombre"><mat-icon>person</mat-icon><span>{{ sale.clienteNombre }}</span></div>
+<mat-dialog-content style="min-width:380px; max-width:440px;">
+  <div class="text-center mt-24 mb-24" *ngIf="loading">
+    <mat-spinner diameter="36" style="margin:auto"></mat-spinner>
+    <p class="text-muted text-sm mt-8">Comprobando el detalle más reciente...</p>
   </div>
 
-  <div class="order-items mb-16">
-    <div class="order-item" *ngFor="let item of sale.items">
-      <span class="oi-qty">{{ item.cantidad }}x</span>
-      <span class="oi-name">{{ item.nombre }}</span>
-      <span class="oi-price">S/ {{ item.subtotal | number:'1.2-2' }}</span>
+  <ng-container *ngIf="!loading">
+    <div class="info-list mb-16">
+      <div class="info-item"><mat-icon>content_cut</mat-icon><span>{{ sale.barberoNombre || 'Sin barbero' }}</span></div>
     </div>
-  </div>
 
-  <p style="font-weight:700; font-size:1.1rem; text-align:right; margin:0 0 16px;">Total: S/ {{ sale.total | number:'1.2-2' }}</p>
-
-  <p class="text-muted text-sm mb-8">Método de pago</p>
-  <div class="payment-methods">
-    <div
-      *ngFor="let pm of paymentMethods"
-      class="payment-method"
-      [class.selected]="metodoPago === pm.value"
-      (click)="metodoPago = pm.value">
-      <mat-icon>{{ pm.icon }}</mat-icon>
-      <span>{{ pm.label }}</span>
+    <div class="order-items mb-16">
+      <div class="order-item" *ngFor="let item of sale.items">
+        <span class="oi-qty">{{ item.cantidad }}x</span>
+        <span class="oi-name">{{ item.nombre }}</span>
+        <span class="oi-price">S/ {{ item.subtotal | number:'1.2-2' }}</span>
+      </div>
     </div>
-  </div>
+
+    <p style="font-weight:700; font-size:1.1rem; text-align:right; margin:0 0 16px;">Total: S/ {{ sale.total | number:'1.2-2' }}</p>
+
+    <div class="notice-banner mb-16" *ngIf="!sale.clienteId && sale.notas">
+      <mat-icon>info</mat-icon>
+      <span>{{ sale.notas }}</span>
+    </div>
+
+    <div class="section-header-row">
+      <p class="text-muted text-sm" style="margin:0">Cliente (opcional)</p>
+      <button mat-button type="button" color="primary" class="new-customer-link" (click)="abrirNuevoCliente()" *ngIf="!showNewCustomerForm">
+        <mat-icon>person_add</mat-icon> Nuevo cliente
+      </button>
+    </div>
+
+    <ng-container *ngIf="!showNewCustomerForm">
+      <mat-form-field appearance="outline" class="w-full">
+        <input matInput [(ngModel)]="searchCustomer" (ngModelChange)="onSearchCustomerChange()" placeholder="Buscar por nombre o teléfono...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <div class="customer-list mb-16">
+        <div
+          *ngFor="let c of customers"
+          class="customer-item"
+          [class.selected]="selectedCustomer?.id === c.id"
+          (click)="toggleCustomer(c)">
+          <div class="mini-avatar">{{ c.nombre[0] }}{{ c.apellido[0] }}</div>
+          <div class="customer-info">
+            <span class="customer-name">{{ c.nombre }} {{ c.apellido }}</span>
+            <span class="text-muted text-sm">{{ c.telefono }}</span>
+          </div>
+        </div>
+        <div class="no-results" *ngIf="!customers.length">
+          <mat-icon>person_search</mat-icon>
+          <p>No se encontraron clientes{{ searchCustomer ? ' con "' + searchCustomer + '"' : '' }}.</p>
+          <button mat-stroked-button type="button" color="primary" (click)="abrirNuevoCliente()">
+            <mat-icon>person_add</mat-icon> Crear cliente nuevo
+          </button>
+        </div>
+      </div>
+      <p class="selection-summary mb-16" *ngIf="selectedCustomer">Cliente seleccionado: <strong>{{ selectedCustomer.nombre }} {{ selectedCustomer.apellido }}</strong></p>
+    </ng-container>
+
+    <div class="new-customer-form mb-16" *ngIf="showNewCustomerForm" [formGroup]="newCustomerForm">
+      <p class="text-muted text-sm mb-8" *ngIf="proximoCodigo">Código de cliente: <strong>{{ proximoCodigo }}</strong></p>
+      <div class="form-row-2">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="nombre">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Apellido</mat-label>
+          <input matInput formControlName="apellido">
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Teléfono</mat-label>
+        <input matInput formControlName="telefono" type="tel" inputmode="numeric" (input)="soloNumeros($event)">
+        <mat-icon matPrefix>phone</mat-icon>
+        <mat-error *ngIf="newCustomerForm.get('telefono')?.hasError('pattern')">Solo números (7-20 dígitos)</mat-error>
+      </mat-form-field>
+      <div class="new-customer-actions">
+        <button mat-stroked-button type="button" (click)="cancelarNuevoCliente()">Cancelar</button>
+        <button mat-flat-button color="primary" type="button" (click)="crearCliente()" [disabled]="creatingCustomer">
+          <mat-spinner diameter="16" *ngIf="creatingCustomer"></mat-spinner>
+          <span *ngIf="!creatingCustomer"><mat-icon>check</mat-icon> Crear y seleccionar</span>
+        </button>
+      </div>
+    </div>
+
+    <p class="text-muted text-sm mb-8">Método de pago</p>
+
+    <ng-container *ngIf="!splitMode">
+      <div class="payment-methods">
+        <div
+          *ngFor="let pm of paymentMethods"
+          class="payment-method"
+          [class.selected]="metodoPago === pm.value"
+          (click)="metodoPago = pm.value">
+          <mat-icon>{{ pm.icon }}</mat-icon>
+          <span>{{ pm.label }}</span>
+        </div>
+      </div>
+      <button mat-button type="button" color="primary" class="split-payment-link" (click)="enableSplit()">
+        <mat-icon>call_split</mat-icon> ¿Pagó con más de un método?
+      </button>
+    </ng-container>
+
+    <ng-container *ngIf="splitMode">
+      <div class="split-payment-rows">
+        <div class="split-payment-row" *ngFor="let p of payments; let i = index">
+          <mat-form-field appearance="outline">
+            <mat-label>Método</mat-label>
+            <mat-select [(ngModel)]="p.metodo">
+              <mat-option *ngFor="let pm of paymentMethods" [value]="pm.value">{{ pm.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Monto</mat-label>
+            <span matPrefix>S/&nbsp;</span>
+            <input matInput type="number" min="0" step="0.10" [(ngModel)]="p.monto">
+          </mat-form-field>
+          <button mat-icon-button (click)="removePaymentRow(i)" matTooltip="Quitar este método">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <button mat-button type="button" color="primary" (click)="addPaymentRow()" *ngIf="hayMetodosDisponibles">
+        <mat-icon>add</mat-icon> Agregar otro método
+      </button>
+
+      <div class="split-payment-total" [class.mismatch]="paymentsMismatch">
+        <span>Ingresado: S/ {{ paymentsSum | number:'1.2-2' }} de S/ {{ sale.total | number:'1.2-2' }}</span>
+        <span *ngIf="paymentsMismatch" class="warn-color">{{ paymentsDiffLabel }}</span>
+      </div>
+    </ng-container>
+  </ng-container>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
   <button mat-stroked-button (click)="cancelar()">Cancelar</button>
-  <button mat-flat-button color="primary" (click)="confirmar()" [disabled]="saving">
+  <button mat-flat-button color="primary" (click)="confirmar()" [disabled]="!puedeConfirmar">
     <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
     <span *ngIf="!saving">Aceptar y cobrar</span>
   </button>

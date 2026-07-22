@@ -48,8 +48,8 @@ export class AppointmentFormComponent implements OnInit {
 
     this.form = this.fb.group({
       barberoId:  [null, Validators.required],
-      fecha:      ['', Validators.required],
-      hora:       ['', Validators.required],
+      fecha:      [new Date(), Validators.required],
+      hora:       [this.horaActualMasCercana(), Validators.required],
       notas:      [''],
     });
 
@@ -138,6 +138,21 @@ export class AppointmentFormComponent implements OnInit {
       hours.push(`${h.toString().padStart(2,'0')}:30`);
     }
     return hours;
+  }
+
+  // Slot de 30 min mas cercano a la hora actual (redondeando hacia arriba),
+  // acotado al rango de availableHours (08:00-19:30) -- para precargar el
+  // formulario de cita nueva con la hora de "ahora" en vez de vacio.
+  private horaActualMasCercana(): string {
+    const ahora = new Date();
+    let h = ahora.getHours();
+    let m = ahora.getMinutes();
+    if (m === 0) { /* ya es un slot valido */ }
+    else if (m <= 30) { m = 30; }
+    else { m = 0; h += 1; }
+    if (h < 8) { h = 8; m = 0; }
+    if (h > 19 || (h === 19 && m > 30)) { h = 19; m = 30; }
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   }
 
   onSubmit(): void {

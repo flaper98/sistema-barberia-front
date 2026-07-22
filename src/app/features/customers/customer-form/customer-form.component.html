@@ -4,7 +4,7 @@
   </div>
   <div class="card" style="max-width:700px" *ngIf="clienteCreado">
     <p>
-      <strong>{{ clienteCreado.nombre }} {{ clienteCreado.apellido }}</strong> fue registrado correctamente.
+      <strong>{{ clienteCreado.nombre }} {{ clienteCreado.apellido }}</strong> fue registrado correctamente con el código <strong>{{ formatId(clienteCreado.id) }}</strong>.
     </p>
     <div class="form-actions">
       <button mat-stroked-button (click)="irAClientes()">Ir a clientes</button>
@@ -16,6 +16,9 @@
 
   <div class="card" style="max-width:700px" *ngIf="!clienteCreado">
     <div *ngIf="loading" class="text-center"><mat-spinner diameter="36" style="margin:auto"></mat-spinner></div>
+    <p class="text-muted text-sm mb-16" *ngIf="!isEdit && proximoCodigo">
+      Código de cliente: <strong>{{ proximoCodigo }}</strong>
+    </p>
     <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="!loading">
       <div class="form-row">
         <mat-form-field appearance="outline">
@@ -30,22 +33,10 @@
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Teléfono *</mat-label>
-          <input matInput formControlName="telefono" type="tel">
+          <input matInput formControlName="telefono" type="tel" inputmode="numeric" (input)="soloNumeros($event)">
           <mat-icon matPrefix>phone</mat-icon>
           <mat-error *ngIf="form.get('telefono')?.hasError('required')">Requerido</mat-error>
-          <mat-error *ngIf="form.get('telefono')?.hasError('pattern')">Formato inválido (7-20 caracteres, se permite +, espacios y guiones)</mat-error>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Correo</mat-label>
-          <input matInput formControlName="correo" type="email">
-          <mat-icon matPrefix>email</mat-icon>
-          <mat-error *ngIf="form.get('correo')?.hasError('email')">Correo inválido</mat-error>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Fecha de nacimiento</mat-label>
-          <input matInput [matDatepicker]="dp" formControlName="fechaNacimiento">
-          <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
-          <mat-datepicker #dp></mat-datepicker>
+          <mat-error *ngIf="form.get('telefono')?.hasError('pattern')">Solo números (7-20 dígitos)</mat-error>
         </mat-form-field>
       </div>
       <mat-form-field appearance="outline" class="w-full mt-8">

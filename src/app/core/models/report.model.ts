@@ -2,7 +2,7 @@ export interface VentaReporte {
   id: number;
   fecha: string;
   clienteNombre: string | null;
-  barberoNombre: string;
+  barberoNombre: string | null;
   subtotal: number;
   descuento: number;
   total: number;
@@ -14,7 +14,6 @@ export interface VentaReporte {
 export interface VentaPorBarbero {
   barberoId: number;
   barberoNombre: string;
-  porcentajeComision: number;
   totalVentas: number;
   ingresos: number;
   comision: number;

@@ -15,7 +15,7 @@ export class ProductListComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
-  displayedColumns = ['nombre', 'categoria', 'precioVenta', 'precioCompra', 'stockActual', 'estado', 'acciones'];
+  private readonly allColumns = ['nombre', 'categoria', 'precioVenta', 'precioCompra', 'stockActual', 'estado', 'acciones'];
   dataSource = new MatTableDataSource<Product>([]);
   loading = true;
 
@@ -26,6 +26,14 @@ export class ProductListComponent implements OnInit {
     private authService: AuthService,
     private permissionService: PermissionService,
   ) {}
+
+  // El barbero no debe ver el precio de compra (costo interno) -- solo el
+  // precio de venta al publico.
+  get displayedColumns(): string[] {
+    return this.authService.hasRole(['BARBER'])
+      ? this.allColumns.filter(c => c !== 'precioCompra')
+      : this.allColumns;
+  }
 
   get puedeEditar(): boolean {
     return this.authService.hasRole(['ADMIN']) || this.permissionService.canEdit('PRODUCTOS');
@@ -58,7 +66,14 @@ export class ProductListComponent implements OnInit {
     });
   }
 
-  applyFilter(e: Event): void { this.dataSource.filter = (e.target as HTMLInputElement).value.trim().toLowerCase(); }
+  applyFilter(e: Event): void {
+    this.dataSource.filter = (e.target as HTMLInputElement).value.trim().toLowerCase();
+    // Sin esto, si estabas en la pagina 2+ y filtrabas a un resultado mas
+    // chico, el paginador se quedaba "pegado" en ese rango viejo (ej.
+    // "11-20 of 31") y la tabla mostraba filas equivocadas o vacias -- el
+    // bug clasico de MatTableDataSource al no resetear la pagina al filtrar.
+    if (this.dataSource.paginator) this.dataSource.paginator.firstPage();
+  }
   isLowStock(p: Product): boolean { return p.stockActual <= p.stockMinimo; }
 
   eliminar(p: Product): void {

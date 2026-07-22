@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { forkJoin, of, Subscription, interval } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 import { DashboardStats, DashboardChartData } from '../../core/models/dashboard.model';
 import { DashboardService } from '../../data/repositories/dashboard.service';
 import { AppointmentService } from '../../data/repositories/appointment.service';
@@ -28,13 +28,15 @@ type Widget = 'appointments' | 'services' | 'lowStock';
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   stats: DashboardStats | null = null;
   chartData: DashboardChartData | null = null;
   todayAppointments: Appointment[] = [];
   lowStockProducts: Product[] = [];
   pendingSalesCount = 0;
   loading = true;
+
+  private pollSub?: Subscription;
 
   readonly pageSize = 5;
   appointmentsPage = 0;
@@ -100,6 +102,23 @@ export class DashboardComponent implements OnInit {
       },
       error: () => { this.loading = false; },
     });
+
+    this.iniciarSondeoPendientes();
+  }
+
+  ngOnDestroy(): void {
+    this.pollSub?.unsubscribe();
+  }
+
+  // La tarjeta "Solicitudes pendientes de cobro" se actualiza sola cada 30s
+  // (misma cadencia que la campana de notificaciones del navbar) -- asi no
+  // hace falta recargar la pagina para ver una solicitud nueva de un
+  // barbero, o para que la tarjeta desaparezca cuando alguien la cobra.
+  private iniciarSondeoPendientes(): void {
+    if (!this.puedeVerSolicitudesPendientes) return;
+    this.pollSub = interval(30000).pipe(
+      switchMap(() => this.saleService.search({ estado: 'PENDIENTE' }).pipe(catchError(() => of([])))),
+    ).subscribe(pendingSales => (this.pendingSalesCount = pendingSales.length));
   }
 
   private ordenarCitas(citas: Appointment[]): Appointment[] {

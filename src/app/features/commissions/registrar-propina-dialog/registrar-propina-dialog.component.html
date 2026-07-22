@@ -1,0 +1,24 @@
+<h2 mat-dialog-title>Registrar propina</h2>
+
+<mat-dialog-content style="min-width:340px">
+  <p class="text-muted text-sm mb-16">Para <strong>{{ data.barberoNombre }}</strong></p>
+
+  <mat-form-field appearance="outline" class="w-full">
+    <mat-label>Monto</mat-label>
+    <span matPrefix>S/&nbsp;</span>
+    <input matInput type="number" min="0.01" step="0.50" [(ngModel)]="monto">
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="w-full">
+    <mat-label>Notas (opcional)</mat-label>
+    <input matInput [(ngModel)]="notas" placeholder="Ej. cliente Juan Pérez">
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="guardar()" [disabled]="!puedeGuardar">
+    <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+    <span *ngIf="!saving">Registrar</span>
+  </button>
+</mat-dialog-actions>

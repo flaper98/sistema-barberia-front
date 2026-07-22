@@ -71,6 +71,7 @@ export class SaleReceiptComponent implements OnInit, OnDestroy {
     TRANSFERENCIA: 'Transferencia',
     YAPE: 'Yape',
     PLIN: 'Plin',
+    MIXTO: 'Mixto',
   };
 
   get numeroBoleta(): string {
@@ -78,8 +79,12 @@ export class SaleReceiptComponent implements OnInit, OnDestroy {
   }
 
   get metodoPagoLabel(): string {
-    if (!this.sale) return '';
+    if (!this.sale?.metodoPago) return 'Sin asignar';
     return this.metodoPagoLabels[this.sale.metodoPago] ?? this.sale.metodoPago;
+  }
+
+  getPagoLabel(metodoPago: string): string {
+    return this.metodoPagoLabels[metodoPago] ?? metodoPago;
   }
 
   imprimir(): void {

@@ -1,0 +1,256 @@
+<div class="page-container fade-in">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Comisiones</h1>
+      <p class="page-subtitle">Comisión de servicios y productos, propinas y descuentos por barbero</p>
+    </div>
+  </div>
+
+  <div class="card mb-16" *ngIf="esBarbero && sinBarberoVinculado">
+    <p class="text-muted text-center">
+      Tu usuario no está vinculado a un barbero — pedile a un administrador que lo asocie en Usuarios.
+    </p>
+  </div>
+
+  <ng-container *ngIf="!sinBarberoVinculado && esBarbero">
+    <ng-container *ngTemplateOutlet="resumenYCortes"></ng-container>
+  </ng-container>
+
+  <mat-tab-group *ngIf="!sinBarberoVinculado && !esBarbero" class="mb-16" (selectedTabChange)="onTabChange($event.index)">
+    <mat-tab label="Resumen y cortes">
+      <ng-container *ngTemplateOutlet="resumenYCortes"></ng-container>
+    </mat-tab>
+    <mat-tab label="Tasas de comisión">
+      <div class="card mt-16">
+        <p class="text-muted text-sm mb-16">
+          Define el % de comisión que se paga al barbero por cada servicio, producto o paquete —
+          no depende de quién lo vendió, sino de qué se vendió.
+        </p>
+
+        <mat-tab-group>
+          <mat-tab label="Servicios">
+            <mat-form-field appearance="outline" class="search-field mt-16">
+              <mat-label>Buscar servicio</mat-label>
+              <input matInput [(ngModel)]="filtroServicios" placeholder="Nombre del servicio...">
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+            <table class="cortes-table" *ngIf="tasasServiciosFiltradas.length">
+              <thead><tr><th>Servicio</th><th>Precio</th><th>% Comisión</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let t of tasasServiciosFiltradas">
+                  <td>{{ t.nombre }}</td>
+                  <td>S/ {{ t.precio | number:'1.2-2' }}</td>
+                  <td>
+                    <mat-form-field appearance="outline" class="rate-input">
+                      <input matInput type="number" min="0" max="100" [(ngModel)]="t.porcentajeComision"
+                             (change)="guardarTasa('SERVICIO', t)">
+                      <span matSuffix>%</span>
+                    </mat-form-field>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="text-muted text-center mt-16" *ngIf="!loadingTasas && tasasCargadas && !tasasServiciosFiltradas.length">Sin resultados</p>
+            <div class="text-center mt-16" *ngIf="loadingTasas"><mat-spinner diameter="32" style="margin:auto"></mat-spinner></div>
+          </mat-tab>
+          <mat-tab label="Productos">
+            <mat-form-field appearance="outline" class="search-field mt-16">
+              <mat-label>Buscar producto</mat-label>
+              <input matInput [(ngModel)]="filtroProductos" placeholder="Nombre del producto...">
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+            <table class="cortes-table" *ngIf="tasasProductosFiltradas.length">
+              <thead><tr><th>Producto</th><th>Precio</th><th>% Comisión</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let t of tasasProductosFiltradas">
+                  <td>{{ t.nombre }}</td>
+                  <td>S/ {{ t.precio | number:'1.2-2' }}</td>
+                  <td>
+                    <mat-form-field appearance="outline" class="rate-input">
+                      <input matInput type="number" min="0" max="100" [(ngModel)]="t.porcentajeComision"
+                             (change)="guardarTasa('PRODUCTO', t)">
+                      <span matSuffix>%</span>
+                    </mat-form-field>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="text-muted text-center mt-16" *ngIf="!loadingTasas && tasasCargadas && !tasasProductosFiltradas.length">Sin resultados</p>
+            <div class="text-center mt-16" *ngIf="loadingTasas"><mat-spinner diameter="32" style="margin:auto"></mat-spinner></div>
+          </mat-tab>
+          <mat-tab label="Paquetes">
+            <mat-form-field appearance="outline" class="search-field mt-16">
+              <mat-label>Buscar paquete</mat-label>
+              <input matInput [(ngModel)]="filtroPaquetes" placeholder="Nombre del paquete...">
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+            <table class="cortes-table" *ngIf="tasasPaquetesFiltradas.length">
+              <thead><tr><th>Paquete</th><th>Precio</th><th>% Comisión</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let t of tasasPaquetesFiltradas">
+                  <td>{{ t.nombre }}</td>
+                  <td>S/ {{ t.precio | number:'1.2-2' }}</td>
+                  <td>
+                    <mat-form-field appearance="outline" class="rate-input">
+                      <input matInput type="number" min="0" max="100" [(ngModel)]="t.porcentajeComision"
+                             (change)="guardarTasa('PAQUETE', t)">
+                      <span matSuffix>%</span>
+                    </mat-form-field>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="text-muted text-center mt-16" *ngIf="!loadingTasas && tasasCargadas && !tasasPaquetesFiltradas.length">Sin resultados</p>
+            <div class="text-center mt-16" *ngIf="loadingTasas"><mat-spinner diameter="32" style="margin:auto"></mat-spinner></div>
+          </mat-tab>
+        </mat-tab-group>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+
+  <ng-template #resumenYCortes>
+    <div class="card mb-16 filters-card">
+      <mat-form-field appearance="outline" *ngIf="!esBarbero">
+        <mat-label>Barbero</mat-label>
+        <mat-select [(ngModel)]="selectedWorkerId" (selectionChange)="onWorkerChange()">
+          <mat-option *ngFor="let w of workers" [value]="w.id">{{ w.nombre }} {{ w.apellido }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Desde</mat-label>
+        <input matInput [matDatepicker]="dpDesde" [(ngModel)]="fechaDesde" (dateChange)="onFechaChange()">
+        <mat-datepicker-toggle matSuffix [for]="dpDesde"></mat-datepicker-toggle>
+        <mat-datepicker #dpDesde></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Hasta</mat-label>
+        <input matInput [matDatepicker]="dpHasta" [(ngModel)]="fechaHasta" (dateChange)="onFechaChange()">
+        <mat-datepicker-toggle matSuffix [for]="dpHasta"></mat-datepicker-toggle>
+        <mat-datepicker #dpHasta></mat-datepicker>
+      </mat-form-field>
+    </div>
+
+    <div class="empty-state card" *ngIf="!selectedWorkerId && !loadingResumen">
+      <mat-icon>payments</mat-icon>
+      <p>No hay barberos activos para mostrar</p>
+    </div>
+
+    <div class="card mb-16 resumen-card" *ngIf="selectedWorkerId">
+      <div class="text-center mt-24 mb-24" *ngIf="loadingResumen"><mat-spinner diameter="36" style="margin:auto"></mat-spinner></div>
+
+      <ng-container *ngIf="!loadingResumen && resumen">
+        <h3 class="section-title">
+          <mat-icon>content_cut</mat-icon>
+          {{ resumen.barberoNombre }}
+        </h3>
+
+        <div class="comision-breakdown">
+          <div class="cb-row">
+            <div class="cb-label"><mat-icon>content_cut</mat-icon> Servicios</div>
+            <div class="cb-monto">+ S/ {{ resumen.comisionServicios | number:'1.2-2' }}</div>
+          </div>
+          <div class="cb-row">
+            <div class="cb-label"><mat-icon>inventory_2</mat-icon> Productos</div>
+            <div class="cb-monto">+ S/ {{ resumen.comisionProductos | number:'1.2-2' }}</div>
+          </div>
+          <div class="cb-row">
+            <div class="cb-label"><mat-icon>volunteer_activism</mat-icon> Propinas</div>
+            <div class="cb-monto positive">+ S/ {{ resumen.propinasPendientes | number:'1.2-2' }}</div>
+          </div>
+          <div class="cb-row">
+            <div class="cb-label"><mat-icon>local_drink</mat-icon> Consumo</div>
+            <div class="cb-monto negative">- S/ {{ resumen.descuentosPendientes | number:'1.2-2' }}</div>
+          </div>
+        </div>
+
+        <button mat-button type="button" color="primary" class="detalle-toggle" (click)="toggleDetalle()" *ngIf="puedeVerDetalle">
+          <mat-icon>{{ mostrarDetalle ? 'expand_less' : 'expand_more' }}</mat-icon>
+          {{ mostrarDetalle ? 'Ocultar detalle por ítem' : 'Ver detalle por ítem' }}
+        </button>
+
+        <div class="detalle-items mb-16" *ngIf="puedeVerDetalle && mostrarDetalle">
+          <div class="text-center mt-16 mb-16" *ngIf="loadingDetalle"><mat-spinner diameter="28" style="margin:auto"></mat-spinner></div>
+
+          <ng-container *ngIf="!loadingDetalle">
+            <p class="text-muted text-center mt-16 mb-16" *ngIf="!detalle.length">Sin ventas en este período</p>
+
+            <div class="detalle-grupo" *ngIf="detalleServicios.length">
+              <p class="dg-titulo"><mat-icon>content_cut</mat-icon> Servicios</p>
+              <div class="detalle-row" *ngFor="let d of detalleServicios">
+                <span class="dr-nombre">{{ d.nombre }} <span class="text-muted">x{{ d.cantidad }}</span></span>
+                <span class="dr-fecha text-muted">{{ d.fecha | date:'dd/MM/yy' }}</span>
+                <span class="dr-comision">+ S/ {{ d.comision | number:'1.2-2' }}</span>
+              </div>
+            </div>
+
+            <div class="detalle-grupo" *ngIf="detalleProductos.length">
+              <p class="dg-titulo"><mat-icon>inventory_2</mat-icon> Productos</p>
+              <div class="detalle-row" *ngFor="let d of detalleProductos">
+                <span class="dr-nombre">{{ d.nombre }} <span class="text-muted">x{{ d.cantidad }}</span></span>
+                <span class="dr-fecha text-muted">{{ d.fecha | date:'dd/MM/yy' }}</span>
+                <span class="dr-comision">+ S/ {{ d.comision | number:'1.2-2' }}</span>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <div class="total-bar">
+          <span>Total a cobrar</span>
+          <strong>S/ {{ resumen.totalEstimado | number:'1.2-2' }}</strong>
+        </div>
+
+        <div class="actions-row" *ngIf="puedeEditar">
+          <button mat-stroked-button (click)="abrirPropina()">
+            <mat-icon>volunteer_activism</mat-icon> Registrar propina
+          </button>
+          <button mat-stroked-button (click)="abrirConsumo()">
+            <mat-icon>local_drink</mat-icon> Registrar consumo
+          </button>
+          <button mat-flat-button color="primary" (click)="generarCorte()" [disabled]="generandoCorte">
+            <mat-spinner diameter="18" *ngIf="generandoCorte"></mat-spinner>
+            <span *ngIf="!generandoCorte"><mat-icon>receipt_long</mat-icon> Generar corte de este periodo</span>
+          </button>
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="card" *ngIf="selectedWorkerId">
+      <h3 class="section-title"><mat-icon>history</mat-icon> Historial de cortes</h3>
+
+      <div class="text-center mt-16 mb-16" *ngIf="loadingCortes"><mat-spinner diameter="32" style="margin:auto"></mat-spinner></div>
+
+      <table class="cortes-table" *ngIf="!loadingCortes && cortes.length">
+        <thead>
+          <tr>
+            <th>Periodo</th>
+            <th>Com. servicios</th>
+            <th>Com. productos</th>
+            <th>Propinas</th>
+            <th>Descuentos</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th *ngIf="puedeEditar"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of cortes">
+            <td>{{ c.fechaDesde | date:'dd/MM/yy' }} - {{ c.fechaHasta | date:'dd/MM/yy' }}</td>
+            <td>S/ {{ c.comisionServicios | number:'1.2-2' }}</td>
+            <td>S/ {{ c.comisionProductos | number:'1.2-2' }}</td>
+            <td>S/ {{ c.totalPropinas | number:'1.2-2' }}</td>
+            <td>S/ {{ c.totalDescuentos | number:'1.2-2' }}</td>
+            <td><strong>S/ {{ c.totalAPagar | number:'1.2-2' }}</strong></td>
+            <td><span class="status-chip" [ngClass]="c.estado.toLowerCase()">{{ c.estado }}</span></td>
+            <td *ngIf="puedeEditar">
+              <button mat-stroked-button *ngIf="c.estado === 'PENDIENTE'" (click)="marcarPagado(c)">Marcar pagado</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="text-muted text-center mt-16" *ngIf="!loadingCortes && !cortes.length">Todavía no hay cortes generados para este barbero</p>
+    </div>
+  </ng-template>
+</div>

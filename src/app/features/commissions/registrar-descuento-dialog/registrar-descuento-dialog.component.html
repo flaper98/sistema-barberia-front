@@ -1,0 +1,55 @@
+<h2 mat-dialog-title>Registrar consumo</h2>
+
+<mat-dialog-content style="min-width:380px; max-width:440px;">
+  <p class="text-muted text-sm mb-16">
+    De <strong>{{ data.barberoNombre }}</strong> -- se descuenta del stock y de su comisión.
+  </p>
+
+  <div class="text-center mt-24 mb-24" *ngIf="loading">
+    <mat-spinner diameter="36" style="margin:auto"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Buscar producto</mat-label>
+      <input matInput [(ngModel)]="searchProduct" placeholder="Nombre...">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <div class="product-list mb-16">
+      <div
+        *ngFor="let p of filteredProducts"
+        class="product-item"
+        [class.selected]="selectedProduct?.id === p.id"
+        (click)="seleccionar(p)">
+        <span class="pi-name">{{ p.nombre }}</span>
+        <span class="pi-meta text-muted text-sm">S/ {{ p.precioVenta | number:'1.2-2' }} · stock {{ p.stockActual }}</span>
+      </div>
+      <p class="catalog-empty" *ngIf="!filteredProducts.length">Sin productos con stock disponible</p>
+    </div>
+
+    <div class="qty-row mb-16" *ngIf="selectedProduct">
+      <mat-form-field appearance="outline">
+        <mat-label>Cantidad</mat-label>
+        <input matInput type="number" min="1" [max]="selectedProduct.stockActual" [(ngModel)]="cantidad">
+      </mat-form-field>
+      <div class="monto-estimado">
+        <span class="text-muted text-sm">Monto a descontar</span>
+        <strong>S/ {{ montoEstimado | number:'1.2-2' }}</strong>
+      </div>
+    </div>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Motivo (opcional)</mat-label>
+      <input matInput [(ngModel)]="motivo" placeholder="Ej. se tomó una gaseosa">
+    </mat-form-field>
+  </ng-container>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="guardar()" [disabled]="!puedeGuardar">
+    <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+    <span *ngIf="!saving">Registrar</span>
+  </button>
+</mat-dialog-actions>

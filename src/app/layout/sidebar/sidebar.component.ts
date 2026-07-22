@@ -33,6 +33,7 @@ export class SidebarComponent {
     { label: 'Inventario',   icon: 'warehouse',           route: '/inventory',   modulo: 'INVENTARIO' },
     { label: 'Fidelización', icon: 'loyalty',             route: '/loyalty',     modulo: 'FIDELIZACION' },
     { label: 'Finanzas',     icon: 'account_balance_wallet', route: '/finance',  modulo: 'FINANZAS' },
+    { label: 'Comisiones',   icon: 'payments',            route: '/commissions', modulo: 'COMISIONES' },
     { label: 'Reportes',     icon: 'bar_chart',           route: '/reports',     modulo: 'REPORTES' },
     { label: 'Usuarios',     icon: 'admin_panel_settings', route: '/users',      roles: ['ADMIN'] },
     { label: 'Configuración',icon: 'settings',            route: '/settings',    modulo: 'CONFIGURACION' },
@@ -51,14 +52,14 @@ export class SidebarComponent {
     return true;
   }
 
-  // "Ventas" apunta al historial (igual que el resto de los modulos: lista
-  // primero, con boton para crear), pero el backend no deja que BARBER lea
-  // GET /api/sales (evita que un barbero vea las ventas/comisiones de sus
-  // companeros) -- para ese rol el link tiene que seguir yendo a Venta
-  // Rapida, la unica vista de ventas que si puede usar.
+  // "Ventas" apunta al historial general, pero el backend no deja que
+  // BARBER lea GET /api/sales (evita que un barbero vea las ventas/
+  // comisiones de sus companeros) -- para ese rol el link va a "Mis
+  // Ventas" (/sales/mine), la vista informativa scopeada a su propio
+  // barberoId via GET /api/sales/by-worker/{id}, que si tiene permitido.
   getRoute(item: NavItem): string {
     if (item.route === '/sales/list' && this.authService.hasRole(['BARBER'])) {
-      return '/sales/quick';
+      return '/sales/mine';
     }
     return item.route;
   }

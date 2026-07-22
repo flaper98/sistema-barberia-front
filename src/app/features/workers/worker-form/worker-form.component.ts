@@ -19,7 +19,6 @@ export class WorkerFormComponent implements OnInit {
       apellido: ['', [Validators.required]],
       telefono: ['', [Validators.required]],
       especialidad: ['', [Validators.required]],
-      porcentajeComision: [35, [Validators.required, Validators.min(0), Validators.max(100)]],
       estado: [true],
     });
     if (this.isEdit) {

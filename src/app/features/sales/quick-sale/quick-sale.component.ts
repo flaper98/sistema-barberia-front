@@ -2,12 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Customer } from '../../../core/models/customer.model';
+import { Customer, CustomerSelector } from '../../../core/models/customer.model';
 import { WorkerSelector } from '../../../core/models/worker.model';
 import { BarberService } from '../../../core/models/service.model';
 import { Product } from '../../../core/models/product.model';
 import { Paquete } from '../../../core/models/paquete.model';
-import { SaleItem, PaymentMethod } from '../../../core/models/sale.model';
+import { SaleItem, PaymentMethod, SalePago } from '../../../core/models/sale.model';
 import { Appointment } from '../../../core/models/appointment.model';
 import { CustomerService } from '../../../data/repositories/customer.service';
 import { WorkerService } from '../../../data/repositories/worker.service';
@@ -54,6 +54,30 @@ export class QuickSaleComponent implements OnInit {
   selectedPayment: PaymentMethod = 'EFECTIVO';
   discount = 0;
   montoRecibido: number | null = null;
+
+  // El barbero puede opcionalmente indicar el cliente de la solicitud --
+  // usa una lista y seleccion APARTE (no comparte customers/selectedCustomer
+  // de arriba, que son para el paso "Inicio" de ADMIN/CASHIER/RECEPTION):
+  // viene de /customers/for-sale (solo nombre y apellido, ver
+  // CustomerSelector), que no depende del permiso del modulo Clientes -- el
+  // barbero puede no tenerlo. Si el cliente no está registrado todavía,
+  // puede dejar sus datos como texto libre (van en "notas") para que
+  // recepción lo registre al aceptar y cobrar -- ver confirmar-venta-dialog,
+  // que ya tiene un alta rápida de cliente ahí.
+  barberoCustomers: CustomerSelector[] = [];
+  selectedBarberoCustomer: CustomerSelector | null = null;
+  // Mutuamente excluyente con selectedCustomer (ver toggleCustomer/
+  // toggleClienteNoRegistrado).
+  mostrarClienteNoRegistrado = false;
+  clienteNoRegNombre = '';
+  clienteNoRegTelefono = '';
+
+  // Pago dividido en mas de un metodo (ej. mitad efectivo, mitad Yape) --
+  // splitMode=false es el caso comun (un solo metodo, cubre el total
+  // completo); al activarlo, cada fila de "payments" necesita su propio
+  // monto y la suma tiene que coincidir con el total.
+  splitMode = false;
+  payments: { metodo: PaymentMethod; monto: number }[] = [];
 
   // Origen: cita que se está cobrando (si se llegó desde "Atender y cobrar")
   citaId: number | null = null;
@@ -105,19 +129,23 @@ export class QuickSaleComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // El cliente (para ADMIN/CASHIER/RECEPTION en el paso "Inicio", ver
+    // customers/selectedCustomer) se carga aparte de este forkJoin -- para
+    // el barbero va por /customers/for-sale (ver loadCustomers), que no
+    // depende del permiso del modulo Clientes; para el resto es la busqueda
+    // completa. Ninguna de las dos debe bloquear el resto de la pantalla.
     forkJoin({
-      customers: this.customerService.search({ size: 20 }),
       workers:   this.workerService.getForSale(),
       services:  this.serviceCatalog.getActive(),
       products:  this.productService.getAll(),
       packages:  this.paqueteService.getActivos(),
     }).subscribe({
-      next: ({ customers, workers, services, products, packages }) => {
-        this.customers = customers;
+      next: ({ workers, services, products, packages }) => {
         this.workers   = workers;
         this.services  = services;
         this.products  = products.filter(p => p.estado && p.stockActual > 0);
         this.packages  = packages;
+        this.loadCustomers();
 
         if (this.esBarbero) {
           const miBarberoId = this.authService.currentUser?.barberoId;
@@ -127,6 +155,12 @@ export class QuickSaleComponent implements OnInit {
         const citaIdParam = this.route.snapshot.queryParamMap.get('citaId');
         if (citaIdParam) {
           this.cargarDesdeCita(+citaIdParam);
+        } else if (this.esBarbero && this.selectedWorker) {
+          // El barbero ya es el barbero de la venta (es el mismo que la
+          // registra) y el metodo de pago lo asigna recepcion al aceptar y
+          // cobrar -- asi que salta directo a Items, sin pasar por el paso
+          // "Inicio" (el cliente, opcional, se elige dentro de Items).
+          this.step = 'items';
         }
       },
       error: (err: Error) => this.snackBar.open(err.message, 'Cerrar', { duration: 4000 }),
@@ -134,6 +168,13 @@ export class QuickSaleComponent implements OnInit {
   }
 
   private loadCustomers(search?: string): void {
+    if (this.esBarbero) {
+      this.customerService.searchForSale(search || undefined).subscribe({
+        next: customers => (this.barberoCustomers = customers),
+        error: () => {},
+      });
+      return;
+    }
     this.customerService.search({ search: search || undefined, size: 20 }).subscribe({
       next: customers => (this.customers = customers),
       error: (err: Error) => this.snackBar.open(err.message, 'Cerrar', { duration: 4000 }),
@@ -211,10 +252,31 @@ export class QuickSaleComponent implements OnInit {
     return this.selectedPayment === 'EFECTIVO' && this.montoRecibido != null && this.montoRecibido < this.total;
   }
 
+  get paymentsSum(): number {
+    return this.payments.reduce((a, p) => a + (p.monto || 0), 0);
+  }
+
+  // Tolerancia chica por redondeo de centavos, no por indulgencia real.
+  get paymentsMismatch(): boolean {
+    return Math.abs(this.paymentsSum - this.total) > 0.005;
+  }
+
+  get paymentsDiffLabel(): string {
+    const diff = this.total - this.paymentsSum;
+    return diff > 0 ? `Falta S/ ${diff.toFixed(2)}` : `Sobra S/ ${Math.abs(diff).toFixed(2)}`;
+  }
+
   get puedeConfirmar(): boolean {
     if (this.loading) return false;
+    if (this.splitMode) return this.payments.length >= 2 && !this.paymentsMismatch;
     if (this.selectedPayment === 'EFECTIVO') return this.montoRecibido != null && this.montoRecibido >= this.total;
     return true;
+  }
+
+  // El barbero manda la solicitud directo desde Items -- sin cliente ni
+  // metodo de pago, esos los asigna recepcion al aceptar y cobrar.
+  get puedeEnviarSolicitud(): boolean {
+    return !this.loading && this.cartItems.length > 0;
   }
 
   // ─── Cart actions ────────────────────────────────────────────────────────────
@@ -278,16 +340,72 @@ export class QuickSaleComponent implements OnInit {
     }
   }
 
+  // Clickear la tarjeta ya seleccionada la deselecciona -- asi se puede
+  // volver atras sin recargar la pantalla, ya que ambos son opcionales.
+  toggleWorker(w: WorkerSelector): void {
+    this.selectedWorker = this.selectedWorker?.id === w.id ? null : w;
+  }
+
+  toggleCustomer(c: Customer): void {
+    this.selectedCustomer = this.selectedCustomer?.id === c.id ? null : c;
+  }
+
+  // Version para el cliente (opcional) que elige el barbero en el paso de
+  // Items -- ver selectedBarberoCustomer/barberoCustomers.
+  toggleBarberoCustomer(c: CustomerSelector): void {
+    this.selectedBarberoCustomer = this.selectedBarberoCustomer?.id === c.id ? null : c;
+    if (this.selectedBarberoCustomer) this.cancelarClienteNoRegistrado();
+  }
+
+  // Cliente sin registrar (solo relevante para el barbero): mutuamente
+  // excluyente con selectedBarberoCustomer -- elegir uno cancela el otro.
+  toggleClienteNoRegistrado(): void {
+    this.mostrarClienteNoRegistrado = !this.mostrarClienteNoRegistrado;
+    if (this.mostrarClienteNoRegistrado) {
+      this.selectedBarberoCustomer = null;
+    } else {
+      this.clienteNoRegNombre = '';
+      this.clienteNoRegTelefono = '';
+    }
+  }
+
+  cancelarClienteNoRegistrado(): void {
+    this.mostrarClienteNoRegistrado = false;
+    this.clienteNoRegNombre = '';
+    this.clienteNoRegTelefono = '';
+  }
+
+  soloNumerosClienteNoReg(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const limpio = input.value.replace(/\D/g, '');
+    if (limpio !== input.value) this.clienteNoRegTelefono = limpio;
+  }
+
+  // Texto libre para "notas" cuando el barbero dejó datos de un cliente
+  // que todavia no esta registrado -- recepcion lo lee al aceptar y cobrar
+  // (ver confirmar-venta-dialog) para darlo de alta ahí mismo.
+  private get notasClienteNoRegistrado(): string | undefined {
+    const nombre = this.clienteNoRegNombre.trim();
+    if (!this.mostrarClienteNoRegistrado || !nombre) return undefined;
+    const tel = this.clienteNoRegTelefono.trim();
+    return `Cliente nuevo (sin registrar): ${nombre}${tel ? ' - Tel: ' + tel : ''}`;
+  }
+
+  // Para el resumen que ve el barbero antes de enviar la solicitud: el
+  // cliente de una cita (selectedCustomer), el que eligió a mano en Items
+  // (selectedBarberoCustomer), o el nombre que tipeó a mano si no está
+  // registrado -- lo que haya, en ese orden.
+  get clienteResumenSolicitud(): string {
+    if (this.selectedCustomer) return `${this.selectedCustomer.nombre} ${this.selectedCustomer.apellido}`;
+    if (this.selectedBarberoCustomer) return `${this.selectedBarberoCustomer.nombre} ${this.selectedBarberoCustomer.apellido}`;
+    return this.clienteNoRegNombre;
+  }
+
   // ─── Navigation ──────────────────────────────────────────────────────────────
+  // Barbero y cliente son ambos opcionales -- no toda venta la atiende un
+  // barbero ni es de un cliente registrado (ej. alguien compra o consume
+  // algo sin que sea por un servicio de barberia).
   goToItems(): void {
-    if (!this.selectedWorker) {
-      this.snackBar.open('Selecciona un barbero', '', { duration: 2000 });
-      return;
-    }
-    if (!this.selectedCustomer) {
-      this.snackBar.open('Selecciona un cliente', '', { duration: 2000 });
-      return;
-    }
     this.step = 'items';
   }
 
@@ -301,13 +419,23 @@ export class QuickSaleComponent implements OnInit {
 
   confirmSale(): void {
     this.loading = true;
+    const pagos: SalePago[] = this.splitMode
+      ? this.payments.map(p => ({ metodoPago: p.metodo, monto: p.monto }))
+      : [{ metodoPago: this.selectedPayment, monto: this.total }];
     const form = {
-      clienteId: this.selectedCustomer?.id,
-      barberoId: this.selectedWorker!.id,
+      // El cliente de una cita ya se sabe de antes (cargarDesdeCita lo puso
+      // en selectedCustomer) -- se manda igual. Fuera de eso, el barbero
+      // puede opcionalmente elegir un cliente ya registrado
+      // (selectedBarberoCustomer); si no eligió ninguno, no manda nada --
+      // recepcion lo asigna al aceptar y cobrar. El metodo de pago sigue
+      // sin ser cosa del barbero.
+      clienteId: (this.esBarbero && !this.citaId) ? this.selectedBarberoCustomer?.id : this.selectedCustomer?.id,
+      barberoId: this.selectedWorker?.id,
       items: this.cartItems.map(({ tipo, itemId, nombre, precio, cantidad, subtotal }) =>
         ({ tipo, itemId, nombre, precio, cantidad, subtotal })),
-      metodoPago: this.selectedPayment,
+      pagos: this.esBarbero ? undefined : pagos,
       descuento: this.discount,
+      notas: this.notasClienteNoRegistrado,
     };
     const op$ = this.citaId
       ? this.appointmentService.convertToSale(this.citaId, form)
@@ -336,12 +464,16 @@ export class QuickSaleComponent implements OnInit {
   newSale(): void {
     this.step = 'setup';
     this.selectedCustomer = null;
+    this.selectedBarberoCustomer = null;
     this.selectedWorker   = null;
     this.cartItems = [];
     this.discount  = 0;
     this.selectedPayment = 'EFECTIVO';
     this.montoRecibido = null;
+    this.splitMode = false;
+    this.payments = [];
     this.searchCustomer = '';
+    this.cancelarClienteNoRegistrado();
     this.lastSaleId = null;
     this.lastSaleEstado = null;
     this.citaId = null;
@@ -354,6 +486,40 @@ export class QuickSaleComponent implements OnInit {
     this.montoRecibido = null;
   }
 
+  // ─── Pago dividido ───────────────────────────────────────────────────────────
+  enableSplit(): void {
+    const segundo = this.paymentMethods.find(p => p.value !== this.selectedPayment)!.value;
+    this.payments = [
+      { metodo: this.selectedPayment, monto: this.total },
+      { metodo: segundo, monto: 0 },
+    ];
+    this.splitMode = true;
+    this.montoRecibido = null;
+  }
+
+  addPaymentRow(): void {
+    const usados = new Set(this.payments.map(p => p.metodo));
+    const disponible = this.paymentMethods.find(p => !usados.has(p.value));
+    if (!disponible) return;
+    const restante = Math.max(0, this.total - this.paymentsSum);
+    this.payments.push({ metodo: disponible.value, monto: restante });
+  }
+
+  removePaymentRow(i: number): void {
+    this.payments.splice(i, 1);
+    if (this.payments.length <= 1) {
+      // Vuelve al flujo simple, conservando el metodo de la fila que quedó.
+      this.selectedPayment = this.payments[0]?.metodo ?? 'EFECTIVO';
+      this.payments = [];
+      this.splitMode = false;
+      this.montoRecibido = null;
+    }
+  }
+
+  get hayMetodosDisponibles(): boolean {
+    return this.payments.length < this.paymentMethods.length;
+  }
+
   // ─── Template helpers (evitan arrow functions en templates) ──────────────────
   getSelectedPaymentIcon(): string {
     return this.paymentMethods.find(p => p.value === this.selectedPayment)?.icon ?? 'payments';
@@ -361,6 +527,14 @@ export class QuickSaleComponent implements OnInit {
 
   getSelectedPaymentLabel(): string {
     return this.paymentMethods.find(p => p.value === this.selectedPayment)?.label ?? this.selectedPayment;
+  }
+
+  getPaymentLabel(metodo: PaymentMethod): string {
+    return this.paymentMethods.find(p => p.value === metodo)?.label ?? metodo;
+  }
+
+  get paymentsSummaryText(): string {
+    return this.payments.map(p => `${this.getPaymentLabel(p.metodo)} S/ ${p.monto.toFixed(2)}`).join(' + ');
   }
 
   hasServicesInCart(): boolean {

@@ -30,7 +30,6 @@
       <div class="wc-stats">
         <div class="ws-item"><span class="ws-label">Servicios</span><strong>{{ w.serviciosRealizados }}</strong></div>
         <div class="ws-item"><span class="ws-label">Generado</span><strong>S/ {{ w.totalGenerado | number:'1.0-0' }}</strong></div>
-        <div class="ws-item"><span class="ws-label">Comisión</span><strong>{{ w.porcentajeComision }}%</strong></div>
       </div>
       <div class="wc-actions">
         <button mat-stroked-button *ngIf="puedeEditar" [routerLink]="['/workers', w.id]"><mat-icon>edit</mat-icon> Editar</button>

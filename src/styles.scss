@@ -275,6 +275,15 @@ a { color: var(--color-primary); text-decoration: none; }
   button { height: 56px; }
 }
 
+.totals-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: rgba(55,71,79,.04); border-radius: var(--radius-md);
+  font-size: .9rem;
+  mat-icon { font-size: 20px; color: var(--color-primary); }
+  strong { font-size: 1.05rem; }
+}
+
 .mini-avatar {
   width: 32px; height: 32px; border-radius: 50%;
   background: var(--color-primary); color: #fff;

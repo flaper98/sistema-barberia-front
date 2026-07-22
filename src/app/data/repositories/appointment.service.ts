@@ -80,7 +80,7 @@ export class AppointmentService {
     const body = {
       clienteId: form.clienteId ?? null,
       barberoId: form.barberoId,
-      metodoPago: form.metodoPago,
+      pagos: form.pagos ?? null,
       descuento: form.descuento ?? 0,
       notas: form.notas ?? null,
       items: form.items.map(i => ({

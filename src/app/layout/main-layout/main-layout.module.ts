@@ -21,6 +21,7 @@ const routes: Routes = [
       { path: 'inventory',   loadChildren: () => import('../../features/inventory/inventory.module').then(m => m.InventoryModule),           canActivate: [RoleGuard], data: { modulo: 'INVENTARIO' } },
       { path: 'services',    loadChildren: () => import('../../features/services-catalog/services-catalog.module').then(m => m.ServicesCatalogModule), canActivate: [RoleGuard], data: { modulo: 'SERVICIOS' } },
       { path: 'finance',     loadChildren: () => import('../../features/finance/finance.module').then(m => m.FinanceModule),     canActivate: [RoleGuard], data: { modulo: 'FINANZAS' } },
+      { path: 'commissions', loadChildren: () => import('../../features/commissions/commissions.module').then(m => m.CommissionsModule), canActivate: [RoleGuard], data: { modulo: 'COMISIONES' } },
       { path: 'loyalty',     loadChildren: () => import('../../features/loyalty/loyalty.module').then(m => m.LoyaltyModule),                 canActivate: [RoleGuard], data: { modulo: 'FIDELIZACION' } },
       { path: 'reports',     loadChildren: () => import('../../features/reports/reports.module').then(m => m.ReportsModule),     canActivate: [RoleGuard], data: { modulo: 'REPORTES' } },
       { path: 'settings',    loadChildren: () => import('../../features/settings/settings.module').then(m => m.SettingsModule),  canActivate: [RoleGuard], data: { modulo: 'CONFIGURACION' } },

@@ -75,7 +75,7 @@
           </ng-container>
           <ng-container matColumnDef="barberoNombre">
             <th mat-header-cell *matHeaderCellDef>Barbero</th>
-            <td mat-cell *matCellDef="let v">{{ v.barberoNombre }}</td>
+            <td mat-cell *matCellDef="let v">{{ v.barberoNombre || 'Sin barbero' }}</td>
           </ng-container>
           <ng-container matColumnDef="metodoPago">
             <th mat-header-cell *matHeaderCellDef>Método de pago</th>

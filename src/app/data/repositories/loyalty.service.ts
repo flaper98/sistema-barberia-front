@@ -2,9 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { LoyaltyAccount, LoyaltyMovement, LoyaltyConfig, Reward } from '../../core/models/loyalty.model';
+import { LoyaltyAccount, LoyaltyMovement, LoyaltyConfig, Reward, ReglaFidelizacion } from '../../core/models/loyalty.model';
 import { ApiResponse, PageResponse } from '../../core/models/api-response.model';
 import { environment } from '../../../environments/environment';
+
+const EMPTY_PAGE: PageResponse<LoyaltyAccount> = { content: [], page: 0, size: 0, totalElements: 0, totalPages: 0, first: true, last: true };
 
 export interface SelloResponse {
   sellosActuales: number;
@@ -22,10 +24,21 @@ export class LoyaltyService {
   constructor(private http: HttpClient) {}
 
   getAccounts(page = 0, size = 50): Observable<LoyaltyAccount[]> {
-    const params = new HttpParams().set('page', page).set('size', size);
+    return this.getAccountsPaged({ page, size }).pipe(map(r => r.content));
+  }
+
+  /**
+   * Version paginada, con busqueda resuelta del lado del servidor -- con
+   * 1000+ clientes, la version anterior (una sola pagina de 50, ordenada
+   * alfabeticamente, sin buscar en el servidor) hacia que un cliente recien
+   * creado pareciera "no estar" en Fidelizacion.
+   */
+  getAccountsPaged(opts: { search?: string; page?: number; size?: number }): Observable<PageResponse<LoyaltyAccount>> {
+    let params = new HttpParams().set('page', opts.page ?? 0).set('size', opts.size ?? 50);
+    if (opts.search) params = params.set('search', opts.search);
     return this.http
       .get<ApiResponse<PageResponse<LoyaltyAccount>>>(`${this.url}/customers`, { params })
-      .pipe(map(r => r.data?.content ?? []));
+      .pipe(map(r => r.data ?? EMPTY_PAGE));
   }
 
   getByCustomer(clienteId: number): Observable<LoyaltyAccount> {
@@ -42,10 +55,14 @@ export class LoyaltyService {
   }
 
   getCustomersWithRewards(page = 0, size = 50): Observable<LoyaltyAccount[]> {
-    const params = new HttpParams().set('page', page).set('size', size);
+    return this.getCustomersWithRewardsPaged({ page, size }).pipe(map(r => r.content));
+  }
+
+  getCustomersWithRewardsPaged(opts: { page?: number; size?: number }): Observable<PageResponse<LoyaltyAccount>> {
+    const params = new HttpParams().set('page', opts.page ?? 0).set('size', opts.size ?? 50);
     return this.http
       .get<ApiResponse<PageResponse<LoyaltyAccount>>>(`${this.url}/customers-with-rewards`, { params })
-      .pipe(map(r => r.data?.content ?? []));
+      .pipe(map(r => r.data ?? EMPTY_PAGE));
   }
 
   addStamp(clienteId: number, ventaId?: number, motivo?: string): Observable<SelloResponse> {
@@ -54,6 +71,13 @@ export class LoyaltyService {
         ventaId: ventaId ?? null,
         motivo: motivo ?? 'Servicio atendido',
       })
+      .pipe(map(r => r.data!));
+  }
+
+  /** Para corregir un sello agregado por error -- quita de a uno. */
+  removeStamp(clienteId: number, motivo = 'Corrección manual'): Observable<SelloResponse> {
+    return this.http
+      .post<ApiResponse<SelloResponse>>(`${this.url}/customers/${clienteId}/remove-stamp`, { motivo })
       .pipe(map(r => r.data!));
   }
 
@@ -85,5 +109,30 @@ export class LoyaltyService {
     return this.http
       .get<ApiResponse<Reward[]>>(`${this.url}/rewards`)
       .pipe(map(r => r.data ?? []));
+  }
+
+  // Reglas de fidelizacion por item del catalogo -- no por cliente.
+  getReglasServicios(): Observable<ReglaFidelizacion[]> {
+    return this.http.get<ApiResponse<ReglaFidelizacion[]>>(`${this.url}/rules/services`).pipe(map(r => r.data ?? []));
+  }
+
+  actualizarReglaServicio(id: number, aplicaFidelizacion: boolean): Observable<ReglaFidelizacion> {
+    return this.http.patch<ApiResponse<ReglaFidelizacion>>(`${this.url}/rules/services/${id}`, { aplicaFidelizacion }).pipe(map(r => r.data!));
+  }
+
+  getReglasProductos(): Observable<ReglaFidelizacion[]> {
+    return this.http.get<ApiResponse<ReglaFidelizacion[]>>(`${this.url}/rules/products`).pipe(map(r => r.data ?? []));
+  }
+
+  actualizarReglaProducto(id: number, aplicaFidelizacion: boolean): Observable<ReglaFidelizacion> {
+    return this.http.patch<ApiResponse<ReglaFidelizacion>>(`${this.url}/rules/products/${id}`, { aplicaFidelizacion }).pipe(map(r => r.data!));
+  }
+
+  getReglasPaquetes(): Observable<ReglaFidelizacion[]> {
+    return this.http.get<ApiResponse<ReglaFidelizacion[]>>(`${this.url}/rules/packages`).pipe(map(r => r.data ?? []));
+  }
+
+  actualizarReglaPaquete(id: number, aplicaFidelizacion: boolean): Observable<ReglaFidelizacion> {
+    return this.http.patch<ApiResponse<ReglaFidelizacion>>(`${this.url}/rules/packages/${id}`, { aplicaFidelizacion }).pipe(map(r => r.data!));
   }
 }

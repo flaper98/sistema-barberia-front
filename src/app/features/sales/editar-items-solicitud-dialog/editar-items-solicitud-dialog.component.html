@@ -1,0 +1,116 @@
+<div class="dialog-header">
+  <div class="dh-text">
+    <h2 mat-dialog-title>Editar solicitud #{{ sale.id }}</h2>
+    <p class="dh-sub">Agregá o quitá servicios/productos mientras recepción no la cobra</p>
+  </div>
+  <button mat-icon-button class="dh-close" (click)="cancelar()" matTooltip="Cerrar">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content class="dialog-body">
+  <div class="text-center mt-24 mb-24" *ngIf="loading">
+    <mat-spinner diameter="36" style="margin:auto"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <section class="cart-section">
+      <p class="section-label">Tu pedido <span class="count-chip" *ngIf="itemCount">{{ itemCount }}</span></p>
+
+      <div class="cart-list" *ngIf="items.length">
+        <div class="cart-row" *ngFor="let item of items">
+          <div class="cr-icon" [ngClass]="item.tipo.toLowerCase()"><mat-icon>{{ iconFor(item.tipo) }}</mat-icon></div>
+          <div class="cr-info">
+            <span class="cr-name">{{ item.nombre }}</span>
+            <span class="cr-unit">S/ {{ item.precio | number:'1.2-2' }} c/u</span>
+          </div>
+          <div class="cr-trailing">
+            <div class="qty-stepper">
+              <button type="button" class="qty-btn" (click)="decreaseItem(item)" aria-label="Quitar uno">
+                <mat-icon>remove</mat-icon>
+              </button>
+              <span>{{ item.cantidad }}</span>
+              <button type="button" class="qty-btn" (click)="increaseItem(item)" aria-label="Agregar uno">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+            <span class="cr-subtotal">S/ {{ item.subtotal | number:'1.2-2' }}</span>
+            <button mat-icon-button class="cr-remove" (click)="removeItem(item)" matTooltip="Quitar del pedido">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="!items.length">
+        <mat-icon>remove_shopping_cart</mat-icon>
+        <p>Sin ítems -- agregá al menos uno abajo</p>
+      </div>
+    </section>
+
+    <section class="catalog-section">
+      <p class="section-label">Agregar más</p>
+
+      <div class="segmented-tabs">
+        <button type="button" [class.active]="itemTab === 0" (click)="itemTab = 0">Servicios</button>
+        <button type="button" [class.active]="itemTab === 1" (click)="itemTab = 1">Productos</button>
+        <button type="button" [class.active]="itemTab === 2" (click)="itemTab = 2">Paquetes</button>
+      </div>
+
+      <mat-form-field appearance="outline" class="w-full search-field">
+        <input matInput [(ngModel)]="searchItem" placeholder="Buscar...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+
+      <div class="catalog-list" *ngIf="itemTab === 0">
+        <button type="button" class="catalog-row" *ngFor="let s of filteredServices" (click)="addService(s)">
+          <span class="cat-name">{{ s.nombre }}</span>
+          <span class="cat-price">S/ {{ s.precio | number:'1.2-2' }}</span>
+          <span class="cat-add"><mat-icon>add</mat-icon></span>
+        </button>
+        <p class="catalog-empty" *ngIf="!filteredServices.length">Sin resultados</p>
+      </div>
+
+      <div class="catalog-list" *ngIf="itemTab === 1">
+        <button type="button" class="catalog-row" *ngFor="let p of filteredProducts" (click)="addProduct(p)">
+          <span class="cat-name">{{ p.nombre }}</span>
+          <span class="cat-price">S/ {{ p.precioVenta | number:'1.2-2' }} · stock {{ p.stockActual }}</span>
+          <span class="cat-add"><mat-icon>add</mat-icon></span>
+        </button>
+        <p class="catalog-empty" *ngIf="!filteredProducts.length">Sin resultados</p>
+      </div>
+
+      <div class="catalog-list" *ngIf="itemTab === 2">
+        <button type="button" class="catalog-row" *ngFor="let pk of filteredPackages" (click)="addPackage(pk)">
+          <span class="cat-name">{{ pk.nombre }}</span>
+          <span class="cat-price">S/ {{ pk.precio | number:'1.2-2' }}</span>
+          <span class="cat-add"><mat-icon>add</mat-icon></span>
+        </button>
+        <p class="catalog-empty" *ngIf="!filteredPackages.length">Sin resultados</p>
+      </div>
+    </section>
+
+    <section class="totals-section">
+      <div class="total-row">
+        <span>Subtotal</span>
+        <span>S/ {{ subtotal | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-row" *ngIf="sale.descuento">
+        <span>Descuento</span>
+        <span>- S/ {{ sale.descuento | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-row grand">
+        <span>Total</span>
+        <span>S/ {{ total | number:'1.2-2' }}</span>
+      </div>
+    </section>
+  </ng-container>
+</mat-dialog-content>
+
+<mat-dialog-actions class="dialog-footer">
+  <button mat-stroked-button class="btn-cancel" (click)="cancelar()">Cancelar</button>
+  <button mat-flat-button color="primary" class="btn-save" (click)="guardar()" [disabled]="!puedeGuardar">
+    <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+    <span *ngIf="!saving"><mat-icon>check</mat-icon> Guardar cambios</span>
+  </button>
+</mat-dialog-actions>

@@ -58,6 +58,32 @@
       </table>
     </div>
 
+    <div *ngIf="filaComisiones" style="margin-top:24px; padding:16px; border:1px solid var(--divider-color, #444); border-radius:8px;">
+      <h3 style="margin:0 0 8px; font-size:1rem; font-weight:600;">Comisiones: ver detalle por ítem</h3>
+      <p class="text-muted text-sm" style="margin:0 0 16px;">
+        Permite ver el desglose de ventas de un barbero por cada servicio, producto o paquete,
+        con fecha y comisión — información más sensible que el resumen general. El Administrador
+        siempre puede verlo; un barbero siempre puede ver el propio. Esto define si Cajero/Recepción
+        también pueden verlo de <strong>cualquier</strong> barbero.
+      </p>
+      <div style="display:flex; gap:24px; flex-wrap:wrap;">
+        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+          <mat-checkbox
+            [checked]="filaComisiones.porRol['CASHIER'].puedeVerDetalle"
+            (change)="onVerDetalleChange('CASHIER', $event.checked)">
+          </mat-checkbox>
+          Cajero
+        </label>
+        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+          <mat-checkbox
+            [checked]="filaComisiones.porRol['RECEPTION'].puedeVerDetalle"
+            (change)="onVerDetalleChange('RECEPTION', $event.checked)">
+          </mat-checkbox>
+          Recepción
+        </label>
+      </div>
+    </div>
+
     <div class="form-actions" style="margin-top:24px;">
       <button mat-flat-button color="primary" [disabled]="saving" (click)="guardar()">
         <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>

@@ -5,17 +5,21 @@
       <p class="page-subtitle">Registra una venta en pocos pasos</p>
     </div>
     <div class="steps-indicator">
-      <div class="step-dot" [class.active]="step === 'setup'"   [class.done]="step !== 'setup'">
-        <mat-icon>person</mat-icon><span>Inicio</span>
-      </div>
-      <div class="step-line"></div>
+      <ng-container *ngIf="!esBarbero">
+        <div class="step-dot" [class.active]="step === 'setup'"   [class.done]="step !== 'setup'">
+          <mat-icon>person</mat-icon><span>Inicio</span>
+        </div>
+        <div class="step-line"></div>
+      </ng-container>
       <div class="step-dot" [class.active]="step === 'items'"   [class.done]="step === 'payment' || step === 'done'">
         <mat-icon>shopping_cart</mat-icon><span>Ítems</span>
       </div>
-      <div class="step-line"></div>
-      <div class="step-dot" [class.active]="step === 'payment'" [class.done]="step === 'done'">
-        <mat-icon>payments</mat-icon><span>Pago</span>
-      </div>
+      <ng-container *ngIf="!esBarbero">
+        <div class="step-line"></div>
+        <div class="step-dot" [class.active]="step === 'payment'" [class.done]="step === 'done'">
+          <mat-icon>payments</mat-icon><span>Pago</span>
+        </div>
+      </ng-container>
       <div class="step-line"></div>
       <div class="step-dot" [class.active]="step === 'done'">
         <mat-icon>check_circle</mat-icon><span>Listo</span>
@@ -31,14 +35,17 @@
   <!-- ─── STEP 1: Setup ─────────────────────────────────────────────── -->
   <div class="sale-layout" *ngIf="step === 'setup'">
     <div class="card">
-      <h3 class="section-title"><mat-icon>content_cut</mat-icon> Barbero</h3>
+      <h3 class="section-title"><mat-icon>content_cut</mat-icon> Barbero <span class="text-muted text-sm">(opcional)</span></h3>
+      <p class="text-muted text-sm" *ngIf="!esBarbero" style="margin-top:-8px">
+        Dejalo sin elegir si nadie en particular atendió esta venta (ej. alguien solo compra o consume algo).
+      </p>
 
       <div class="worker-grid" *ngIf="!esBarbero">
         <div
           *ngFor="let w of workers"
           class="worker-card"
           [class.selected]="selectedWorker?.id === w.id"
-          (click)="selectedWorker = w">
+          (click)="toggleWorker(w)">
           <div class="worker-avatar">{{ w.avatar || (w.nombre[0] + w.apellido[0]) }}</div>
           <div class="worker-name">{{ w.nombre }}</div>
           <div class="worker-spec text-muted text-sm">{{ w.especialidad }}</div>
@@ -59,8 +66,11 @@
       </p>
     </div>
 
-    <div class="card">
-      <h3 class="section-title"><mat-icon>person_search</mat-icon> Cliente</h3>
+    <div class="card" *ngIf="!esBarbero">
+      <h3 class="section-title"><mat-icon>person_search</mat-icon> Cliente <span class="text-muted text-sm">(opcional)</span></h3>
+      <p class="text-muted text-sm" style="margin-top:-8px">
+        Dejalo sin elegir si quien compra o consume no está registrado.
+      </p>
       <mat-form-field appearance="outline" class="w-full">
         <mat-label>Buscar cliente</mat-label>
         <input matInput [(ngModel)]="searchCustomer" (ngModelChange)="onSearchCustomerChange()" placeholder="Nombre, teléfono...">
@@ -71,7 +81,7 @@
           *ngFor="let c of filteredCustomers"
           class="customer-item"
           [class.selected]="selectedCustomer?.id === c.id"
-          (click)="selectedCustomer = c">
+          (click)="toggleCustomer(c)">
           <div class="customer-avatar">{{ c.nombre[0] }}{{ c.apellido[0] }}</div>
           <div class="customer-info">
             <span class="customer-name">{{ c.nombre }} {{ c.apellido }}</span>
@@ -85,12 +95,13 @@
       </div>
     </div>
 
-    <div class="step-actions">
-      <div class="selection-summary" *ngIf="selectedWorker">
-        Barbero: <strong>{{ selectedWorker.nombre }}</strong>
-        <span *ngIf="selectedCustomer"> · Cliente: <strong>{{ selectedCustomer.nombre }}</strong></span>
+    <div class="step-actions" *ngIf="!esBarbero">
+      <div class="selection-summary" *ngIf="selectedWorker || selectedCustomer">
+        <span *ngIf="selectedWorker">Barbero: <strong>{{ selectedWorker.nombre }}</strong></span>
+        <span *ngIf="selectedWorker && selectedCustomer"> · </span>
+        <span *ngIf="selectedCustomer">Cliente: <strong>{{ selectedCustomer.nombre }}</strong></span>
       </div>
-      <button mat-flat-button color="primary" (click)="goToItems()" [disabled]="!selectedWorker || !selectedCustomer">
+      <button mat-flat-button color="primary" (click)="goToItems()">
         Continuar <mat-icon>arrow_forward</mat-icon>
       </button>
     </div>
@@ -173,6 +184,57 @@
 
     <!-- Cart -->
     <div class="cart-panel">
+      <div class="card" *ngIf="esBarbero">
+        <h3 class="section-title"><mat-icon>person_search</mat-icon> Cliente <span class="text-muted text-sm">(opcional)</span></h3>
+
+        <ng-container *ngIf="!mostrarClienteNoRegistrado">
+          <div class="customer-item selected" *ngIf="selectedBarberoCustomer" (click)="toggleBarberoCustomer(selectedBarberoCustomer)">
+            <div class="customer-avatar">{{ selectedBarberoCustomer.nombre[0] }}{{ selectedBarberoCustomer.apellido[0] }}</div>
+            <div class="customer-info"><span class="customer-name">{{ selectedBarberoCustomer.nombre }} {{ selectedBarberoCustomer.apellido }}</span></div>
+            <mat-icon>close</mat-icon>
+          </div>
+
+          <ng-container *ngIf="!selectedBarberoCustomer">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Buscar cliente</mat-label>
+              <input matInput [(ngModel)]="searchCustomer" (ngModelChange)="onSearchCustomerChange()" placeholder="Nombre...">
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+            <div class="customer-list">
+              <div
+                *ngFor="let c of barberoCustomers"
+                class="customer-item"
+                (click)="toggleBarberoCustomer(c)">
+                <div class="customer-avatar">{{ c.nombre[0] }}{{ c.apellido[0] }}</div>
+                <div class="customer-info">
+                  <span class="customer-name">{{ c.nombre }} {{ c.apellido }}</span>
+                </div>
+              </div>
+            </div>
+            <button mat-button color="primary" type="button" (click)="toggleClienteNoRegistrado()">
+              <mat-icon>person_add</mat-icon> Cliente nuevo (no está registrado)
+            </button>
+          </ng-container>
+        </ng-container>
+
+        <ng-container *ngIf="mostrarClienteNoRegistrado">
+          <p class="text-muted text-sm" style="margin-top:-8px">
+            Dejá sus datos para que recepción lo registre al aceptar y cobrar la solicitud.
+          </p>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Nombre del cliente</mat-label>
+            <input matInput [(ngModel)]="clienteNoRegNombre">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Teléfono (opcional)</mat-label>
+            <input matInput type="tel" inputmode="numeric" [(ngModel)]="clienteNoRegTelefono" (input)="soloNumerosClienteNoReg($event)">
+          </mat-form-field>
+          <button mat-button type="button" (click)="cancelarClienteNoRegistrado()">
+            <mat-icon>close</mat-icon> Cancelar
+          </button>
+        </ng-container>
+      </div>
+
       <div class="card cart-card">
         <h3 class="section-title">
           <mat-icon>shopping_cart</mat-icon>
@@ -241,12 +303,29 @@
           </div>
         </div>
 
-        <div class="step-actions mt-16">
+        <p class="text-muted text-sm mb-8" *ngIf="esBarbero && clienteResumenSolicitud">
+          Cliente: <strong>{{ clienteResumenSolicitud }}</strong>
+        </p>
+
+        <div class="loyalty-notice mb-16" *ngIf="esBarbero">
+          <mat-icon>front_hand</mat-icon>
+          <span *ngIf="!selectedCustomer && !selectedBarberoCustomer">Esto crea una <strong>solicitud pendiente de cobro</strong> — recepción va a asignar el cliente, el método de pago y cobrarla.</span>
+          <span *ngIf="selectedCustomer || selectedBarberoCustomer">Esto crea una <strong>solicitud pendiente de cobro</strong> — recepción va a asignar el método de pago y cobrarla.</span>
+        </div>
+
+        <div class="step-actions mt-16" *ngIf="!esBarbero">
           <button mat-stroked-button (click)="step = 'setup'">
             <mat-icon>arrow_back</mat-icon> Atrás
           </button>
           <button mat-flat-button color="primary" (click)="goToPayment()" [disabled]="!cartItems.length">
             Pago <mat-icon>arrow_forward</mat-icon>
+          </button>
+        </div>
+
+        <div class="step-actions mt-16" *ngIf="esBarbero">
+          <button mat-flat-button color="primary" class="confirm-btn" (click)="confirmSale()" [disabled]="!puedeEnviarSolicitud">
+            <mat-spinner diameter="18" *ngIf="loading"></mat-spinner>
+            <span *ngIf="!loading"><mat-icon>front_hand</mat-icon> Enviar solicitud · S/ {{ total | number:'1.2-2' }}</span>
           </button>
         </div>
       </div>
@@ -257,35 +336,72 @@
   <div class="payment-layout" *ngIf="step === 'payment'">
     <div class="card payment-card">
       <h3 class="section-title"><mat-icon>payments</mat-icon> Método de pago</h3>
-      <div class="payment-methods">
-        <div
-          *ngFor="let pm of paymentMethods"
-          class="payment-method"
-          [class.selected]="selectedPayment === pm.value"
-          (click)="selectPayment(pm.value)">
-          <mat-icon>{{ pm.icon }}</mat-icon>
-          <span>{{ pm.label }}</span>
-        </div>
-      </div>
 
-      <!-- Cálculo de vuelto (solo efectivo) -->
-      <div class="cash-calc" *ngIf="selectedPayment === 'EFECTIVO'">
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Paga con</mat-label>
-          <span matPrefix>S/&nbsp;</span>
-          <input matInput type="number" min="0" step="0.10" [(ngModel)]="montoRecibido">
-        </mat-form-field>
-        <div class="cash-result" *ngIf="montoRecibido != null">
-          <ng-container *ngIf="!pagoInsuficiente; else insuficiente">
-            <span>Vuelto</span>
-            <strong>S/ {{ vuelto | number:'1.2-2' }}</strong>
-          </ng-container>
-          <ng-template #insuficiente>
-            <span class="warn-color">Falta</span>
-            <strong class="warn-color">S/ {{ (total - montoRecibido!) | number:'1.2-2' }}</strong>
-          </ng-template>
+      <ng-container *ngIf="!splitMode">
+        <div class="payment-methods">
+          <div
+            *ngFor="let pm of paymentMethods"
+            class="payment-method"
+            [class.selected]="selectedPayment === pm.value"
+            (click)="selectPayment(pm.value)">
+            <mat-icon>{{ pm.icon }}</mat-icon>
+            <span>{{ pm.label }}</span>
+          </div>
         </div>
-      </div>
+
+        <!-- Cálculo de vuelto (solo efectivo) -->
+        <div class="cash-calc" *ngIf="selectedPayment === 'EFECTIVO'">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Paga con</mat-label>
+            <span matPrefix>S/&nbsp;</span>
+            <input matInput type="number" min="0" step="0.10" [(ngModel)]="montoRecibido">
+          </mat-form-field>
+          <div class="cash-result" *ngIf="montoRecibido != null">
+            <ng-container *ngIf="!pagoInsuficiente; else insuficiente">
+              <span>Vuelto</span>
+              <strong>S/ {{ vuelto | number:'1.2-2' }}</strong>
+            </ng-container>
+            <ng-template #insuficiente>
+              <span class="warn-color">Falta</span>
+              <strong class="warn-color">S/ {{ (total - montoRecibido!) | number:'1.2-2' }}</strong>
+            </ng-template>
+          </div>
+        </div>
+
+        <button mat-button type="button" color="primary" class="split-payment-link" (click)="enableSplit()" *ngIf="!esBarbero">
+          <mat-icon>call_split</mat-icon> ¿Pagó con más de un método?
+        </button>
+      </ng-container>
+
+      <ng-container *ngIf="splitMode">
+        <div class="split-payment-rows">
+          <div class="split-payment-row" *ngFor="let p of payments; let i = index">
+            <mat-form-field appearance="outline">
+              <mat-label>Método</mat-label>
+              <mat-select [(ngModel)]="p.metodo">
+                <mat-option *ngFor="let pm of paymentMethods" [value]="pm.value">{{ pm.label }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Monto</mat-label>
+              <span matPrefix>S/&nbsp;</span>
+              <input matInput type="number" min="0" step="0.10" [(ngModel)]="p.monto">
+            </mat-form-field>
+            <button mat-icon-button (click)="removePaymentRow(i)" matTooltip="Quitar este método">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <button mat-button type="button" color="primary" (click)="addPaymentRow()" *ngIf="hayMetodosDisponibles">
+          <mat-icon>add</mat-icon> Agregar otro método
+        </button>
+
+        <div class="split-payment-total" [class.mismatch]="paymentsMismatch">
+          <span>Ingresado: S/ {{ paymentsSum | number:'1.2-2' }} de S/ {{ total | number:'1.2-2' }}</span>
+          <span *ngIf="paymentsMismatch" class="warn-color">{{ paymentsDiffLabel }}</span>
+        </div>
+      </ng-container>
 
       <mat-divider class="mt-24 mb-24"></mat-divider>
 
@@ -294,7 +410,7 @@
 
       <div class="summary-worker mb-16">
         <mat-icon>content_cut</mat-icon>
-        <span>{{ selectedWorker?.nombre }} {{ selectedWorker?.apellido }}</span>
+        <span>{{ selectedWorker ? (selectedWorker.nombre + ' ' + selectedWorker.apellido) : 'Sin barbero' }}</span>
         <span class="text-muted text-sm" *ngIf="selectedCustomer">· {{ selectedCustomer.nombre }} {{ selectedCustomer.apellido }}</span>
       </div>
 
@@ -312,7 +428,11 @@
         <div class="fs-row"><span>Subtotal</span><span>S/ {{ subtotal | number:'1.2-2' }}</span></div>
         <div class="fs-row discount" *ngIf="discount > 0"><span>Descuento</span><span>- S/ {{ discount | number:'1.2-2' }}</span></div>
         <div class="fs-row fs-total"><span>TOTAL A COBRAR</span><span>S/ {{ total | number:'1.2-2' }}</span></div>
-        <div class="fs-payment"><mat-icon>{{ getSelectedPaymentIcon() }}</mat-icon> {{ getSelectedPaymentLabel() }}</div>
+        <div class="fs-payment" *ngIf="!splitMode"><mat-icon>{{ getSelectedPaymentIcon() }}</mat-icon> {{ getSelectedPaymentLabel() }}</div>
+        <div class="fs-payment" *ngIf="splitMode">
+          <mat-icon>call_split</mat-icon>
+          {{ paymentsSummaryText }}
+        </div>
       </div>
 
       <div class="loyalty-notice" *ngIf="selectedCustomer && hasServicesInCart() && !esBarbero">
@@ -356,14 +476,15 @@
       <p class="text-muted" *ngIf="citaOrigen && lastSaleEstado !== 'PENDIENTE'">La cita de {{ citaOrigen.clienteNombre }} quedó marcada como atendida.</p>
 
       <div class="done-summary">
-        <div class="ds-row"><span>Barbero</span><strong>{{ selectedWorker?.nombre }}</strong></div>
-        <div class="ds-row" *ngIf="selectedCustomer"><span>Cliente</span><strong>{{ selectedCustomer!.nombre }}</strong></div>
+        <div class="ds-row" *ngIf="selectedWorker"><span>Barbero</span><strong>{{ selectedWorker.nombre }}</strong></div>
+        <div class="ds-row" *ngIf="clienteResumenSolicitud"><span>Cliente</span><strong>{{ clienteResumenSolicitud }}</strong></div>
         <div class="ds-row"><span>{{ lastSaleEstado === 'PENDIENTE' ? 'Total a cobrar' : 'Total cobrado' }}</span><strong>S/ {{ total | number:'1.2-2' }}</strong></div>
-        <div class="ds-row" *ngIf="lastSaleEstado !== 'PENDIENTE'"><span>Método de pago</span><strong>{{ selectedPayment }}</strong></div>
-        <div class="ds-row" *ngIf="lastSaleEstado !== 'PENDIENTE' && selectedPayment === 'EFECTIVO' && montoRecibido != null">
+        <div class="ds-row" *ngIf="lastSaleEstado !== 'PENDIENTE' && !splitMode"><span>Método de pago</span><strong>{{ getSelectedPaymentLabel() }}</strong></div>
+        <div class="ds-row" *ngIf="lastSaleEstado !== 'PENDIENTE' && splitMode"><span>Métodos de pago</span><strong>{{ paymentsSummaryText }}</strong></div>
+        <div class="ds-row" *ngIf="lastSaleEstado !== 'PENDIENTE' && !splitMode && selectedPayment === 'EFECTIVO' && montoRecibido != null">
           <span>Pagó con</span><strong>S/ {{ montoRecibido | number:'1.2-2' }}</strong>
         </div>
-        <div class="ds-row" *ngIf="lastSaleEstado !== 'PENDIENTE' && selectedPayment === 'EFECTIVO' && montoRecibido != null">
+        <div class="ds-row" *ngIf="lastSaleEstado !== 'PENDIENTE' && !splitMode && selectedPayment === 'EFECTIVO' && montoRecibido != null">
           <span>Vuelto</span><strong>S/ {{ vuelto | number:'1.2-2' }}</strong>
         </div>
         <div class="ds-row loyalty" *ngIf="lastSaleEstado !== 'PENDIENTE' && selectedCustomer && hasServicesInCart()">

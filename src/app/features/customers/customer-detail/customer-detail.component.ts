@@ -12,6 +12,7 @@ import { AppointmentService } from '../../../data/repositories/appointment.servi
 import { LoyaltyService } from '../../../data/repositories/loyalty.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { PermissionService } from '../../../core/auth/permission.service';
+import { formatCodigo } from '../../../core/utils/format.util';
 
 @Component({
   selector: 'app-customer-detail',
@@ -119,7 +120,7 @@ export class CustomerDetailComponent implements OnInit {
   }
 
   getStampArray(count: number): number[] { return Array.from({ length: count }, (_, i) => i); }
-  formatId(id: number): string { return id.toString().padStart(4, '0'); }
+  formatId(id: number): string { return formatCodigo(id); }
 
   empezarEdicionRecompensa(): void {
     this.descripcionRecompensaEditada = this.loyaltyAccount?.descripcionRecompensa ?? this.descripcionRecompensa;

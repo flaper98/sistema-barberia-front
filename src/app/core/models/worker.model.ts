@@ -4,7 +4,6 @@ export interface Worker {
   apellido: string;
   telefono: string;
   especialidad: string;
-  porcentajeComision: number;
   estado: boolean;
   totalGenerado: number;
   serviciosRealizados: number;

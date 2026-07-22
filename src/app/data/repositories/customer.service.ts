@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
-import { Customer, CustomerFilters } from '../../core/models/customer.model';
+import { Customer, CustomerFilters, CustomerSelector } from '../../core/models/customer.model';
 import { ApiResponse, PageResponse } from '../../core/models/api-response.model';
 import { environment } from '../../../environments/environment';
 
@@ -26,8 +26,29 @@ export class CustomerService {
       .pipe(map(r => r.data!));
   }
 
+  /** Solo informativo, para mostrar en el formulario de alta antes de guardar. */
+  getNextCode(): Observable<number | null> {
+    return this.http
+      .get<ApiResponse<number>>(`${this.url}/next-code`)
+      .pipe(map(r => r.data ?? null));
+  }
+
   search(filters: CustomerFilters): Observable<Customer[]> {
     return this.searchPaged(filters).pipe(map(r => r.content));
+  }
+
+  /**
+   * Para selectores (ej. el barbero adjuntando un cliente a su solicitud de
+   * venta): no depende del permiso del módulo Clientes -- ver
+   * ClienteController#listarParaSelector, mismo criterio que
+   * WorkerService.getForSale().
+   */
+  searchForSale(search?: string): Observable<CustomerSelector[]> {
+    let params = new HttpParams();
+    if (search) params = params.set('search', search);
+    return this.http
+      .get<ApiResponse<CustomerSelector[]>>(`${this.url}/for-sale`, { params })
+      .pipe(map(r => r.data ?? []));
   }
 
   /**

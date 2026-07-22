@@ -10,6 +10,7 @@ import { CustomerService } from '../../../data/repositories/customer.service';
 import { BusinessConfigService } from '../../../data/repositories/business-config.service';
 import { LoyaltyService } from '../../../data/repositories/loyalty.service';
 import { buildWhatsappLink } from '../../../core/utils/whatsapp.util';
+import { formatCodigo } from '../../../core/utils/format.util';
 import { AuthService } from '../../../core/auth/auth.service';
 import { PermissionService } from '../../../core/auth/permission.service';
 
@@ -146,7 +147,7 @@ export class CustomerListComponent implements OnInit {
   }
 
   formatId(id: number): string {
-    return id.toString().padStart(4, '0');
+    return formatCodigo(id);
   }
 
   get puedeEliminar(): boolean {

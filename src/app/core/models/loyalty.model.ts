@@ -39,3 +39,12 @@ export interface LoyaltyConfig {
   activo: boolean;
   updatedAt?: string;
 }
+
+// Un item del catalogo (servicio/producto/paquete) con si suma o no sello
+// de fidelizacion, para la pantalla Fidelizacion -> Que aplica sello.
+export interface ReglaFidelizacion {
+  id: number;
+  nombre: string;
+  precio: number;
+  aplicaFidelizacion: boolean;
+}

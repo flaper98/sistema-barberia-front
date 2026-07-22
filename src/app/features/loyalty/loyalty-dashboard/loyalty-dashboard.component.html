@@ -6,18 +6,21 @@
   <mat-tab-group (selectedIndexChange)="onTabChange($event)" class="mb-24">
     <mat-tab label="Todos los clientes"></mat-tab>
     <mat-tab label="Con recompensas disponibles"></mat-tab>
+    <mat-tab label="Qué aplica sello" *ngIf="!esBarbero"></mat-tab>
   </mat-tab-group>
 
-  <mat-form-field appearance="outline" class="search-field mb-16">
-    <mat-label>Buscar cliente</mat-label>
-    <input matInput [(ngModel)]="search" (ngModelChange)="applyFilter()">
-    <mat-icon matSuffix>search</mat-icon>
-  </mat-form-field>
+  <ng-container *ngIf="activeTab !== 2">
+    <mat-form-field appearance="outline" class="search-field mb-16">
+      <mat-label>Buscar cliente</mat-label>
+      <input matInput [(ngModel)]="search" (ngModelChange)="onSearchChange()" placeholder="Nombre, teléfono, código...">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
 
-  <div *ngIf="loading" class="text-center"><mat-spinner diameter="40" style="margin:auto"></mat-spinner></div>
+    <div *ngIf="loading" class="text-center"><mat-spinner diameter="40" style="margin:auto"></mat-spinner></div>
+  </ng-container>
 
-  <div class="loyalty-grid" *ngIf="!loading">
-    <div class="loyalty-card card" *ngFor="let acc of filtered">
+  <div class="loyalty-grid" *ngIf="activeTab !== 2 && !loading">
+    <div class="loyalty-card card" *ngFor="let acc of accounts">
       <div class="lc-header">
         <div class="lc-avatar">{{ acc.clienteNombre[0] }}</div>
         <div>
@@ -55,6 +58,9 @@
         <button mat-stroked-button (click)="addStamp(acc)">
           <mat-icon>add_circle</mat-icon> Agregar sello
         </button>
+        <button mat-stroked-button *ngIf="acc.sellosActuales > 0 || acc.recompensasDisponibles > 0" (click)="removeStamp(acc)" matTooltip="Corregir un sello agregado por error">
+          <mat-icon>remove_circle_outline</mat-icon> Quitar sello
+        </button>
         <button mat-flat-button color="accent" *ngIf="acc.recompensasDisponibles > 0" (click)="redeem(acc)">
           <mat-icon>redeem</mat-icon> Canjear {{ descripcionRecompensa }}
         </button>
@@ -64,9 +70,94 @@
       </div>
     </div>
 
-    <div class="empty-state" *ngIf="!filtered.length">
+    <div class="empty-state" *ngIf="!accounts.length">
       <mat-icon>loyalty</mat-icon>
-      <p>{{ activeTab === 1 ? 'Sin recompensas pendientes' : 'Sin clientes' }}</p>
+      <p *ngIf="!search">{{ activeTab === 1 ? 'Sin recompensas pendientes' : 'Sin clientes' }}</p>
+      <p *ngIf="search">Sin resultados para "{{ search }}"</p>
     </div>
+  </div>
+
+  <mat-paginator
+    *ngIf="activeTab !== 2 && !loading"
+    [length]="totalElements"
+    [pageIndex]="pageIndex"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[12, 24, 48]"
+    showFirstLastButtons
+    (page)="onPageChange($event)">
+  </mat-paginator>
+
+  <div class="card mt-16" *ngIf="activeTab === 2">
+    <p class="text-muted text-sm mb-16">
+      Define qué servicios, productos o paquetes suman sello de fidelización al cliente —
+      no depende de quién lo vendió, sino de qué se vendió. Con que la venta tenga al menos
+      un ítem marcado alcanza para sumar el sello.
+    </p>
+
+    <mat-tab-group>
+      <mat-tab label="Servicios">
+        <mat-form-field appearance="outline" class="search-field mt-16">
+          <mat-label>Buscar servicio</mat-label>
+          <input matInput [(ngModel)]="filtroReglaServicios" placeholder="Nombre del servicio...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+        <table class="cortes-table" *ngIf="reglasServiciosFiltradas.length">
+          <thead><tr><th>Servicio</th><th>Precio</th><th>Suma sello</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let r of reglasServiciosFiltradas">
+              <td>{{ r.nombre }}</td>
+              <td>S/ {{ r.precio | number:'1.2-2' }}</td>
+              <td>
+                <mat-checkbox [checked]="r.aplicaFidelizacion" (change)="guardarRegla('SERVICIO', r, $event.checked)"></mat-checkbox>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="text-muted text-center mt-16" *ngIf="!loadingReglas && reglasCargadas && !reglasServiciosFiltradas.length">Sin resultados</p>
+        <div class="text-center mt-16" *ngIf="loadingReglas"><mat-spinner diameter="32" style="margin:auto"></mat-spinner></div>
+      </mat-tab>
+      <mat-tab label="Productos">
+        <mat-form-field appearance="outline" class="search-field mt-16">
+          <mat-label>Buscar producto</mat-label>
+          <input matInput [(ngModel)]="filtroReglaProductos" placeholder="Nombre del producto...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+        <table class="cortes-table" *ngIf="reglasProductosFiltradas.length">
+          <thead><tr><th>Producto</th><th>Precio</th><th>Suma sello</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let r of reglasProductosFiltradas">
+              <td>{{ r.nombre }}</td>
+              <td>S/ {{ r.precio | number:'1.2-2' }}</td>
+              <td>
+                <mat-checkbox [checked]="r.aplicaFidelizacion" (change)="guardarRegla('PRODUCTO', r, $event.checked)"></mat-checkbox>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="text-muted text-center mt-16" *ngIf="!loadingReglas && reglasCargadas && !reglasProductosFiltradas.length">Sin resultados</p>
+        <div class="text-center mt-16" *ngIf="loadingReglas"><mat-spinner diameter="32" style="margin:auto"></mat-spinner></div>
+      </mat-tab>
+      <mat-tab label="Paquetes">
+        <mat-form-field appearance="outline" class="search-field mt-16">
+          <mat-label>Buscar paquete</mat-label>
+          <input matInput [(ngModel)]="filtroReglaPaquetes" placeholder="Nombre del paquete...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+        <table class="cortes-table" *ngIf="reglasPaquetesFiltradas.length">
+          <thead><tr><th>Paquete</th><th>Precio</th><th>Suma sello</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let r of reglasPaquetesFiltradas">
+              <td>{{ r.nombre }}</td>
+              <td>S/ {{ r.precio | number:'1.2-2' }}</td>
+              <td>
+                <mat-checkbox [checked]="r.aplicaFidelizacion" (change)="guardarRegla('PAQUETE', r, $event.checked)"></mat-checkbox>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="text-muted text-center mt-16" *ngIf="!loadingReglas && reglasCargadas && !reglasPaquetesFiltradas.length">Sin resultados</p>
+        <div class="text-center mt-16" *ngIf="loadingReglas"><mat-spinner diameter="32" style="margin:auto"></mat-spinner></div>
+      </mat-tab>
+    </mat-tab-group>
   </div>
 </div>

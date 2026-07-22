@@ -37,6 +37,12 @@ export class PermissionService {
     return this.permisos[modulo]?.puedeEliminar ?? false;
   }
 
+  // Solo tiene sentido para 'COMISIONES' -- ver el detalle por item de
+  // ventas/comisiones de un barbero, con fecha.
+  canViewDetail(modulo: Modulo): boolean {
+    return this.permisos[modulo]?.puedeVerDetalle ?? false;
+  }
+
   clear(): void {
     this.permisos = {};
     localStorage.removeItem(STORAGE_KEY);

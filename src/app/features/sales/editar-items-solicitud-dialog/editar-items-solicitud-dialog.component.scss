@@ -1,0 +1,179 @@
+:host {
+  display: block;
+  max-width: 100%;
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+.dialog-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+  padding: 18px 16px 12px 20px;
+
+  h2[mat-dialog-title] { margin: 0 0 4px !important; font-size: 1.1rem; font-weight: 700; line-height: 1.25; }
+  .dh-sub { margin: 0; font-size: .78rem; color: var(--color-text-muted); line-height: 1.4; }
+  .dh-close { flex-shrink: 0; margin-top: -6px; margin-right: -8px; color: var(--color-text-muted); }
+}
+
+// ─── Body ─────────────────────────────────────────────────────────────────────
+.dialog-body {
+  padding: 0 20px 4px !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.section-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--color-text-muted); margin: 0 0 10px;
+}
+.count-chip {
+  background: var(--color-primary); color: #fff; border-radius: 10px;
+  font-size: .68rem; font-weight: 700; padding: 1px 7px;
+}
+
+// ─── Carrito ──────────────────────────────────────────────────────────────────
+.cart-section { margin-bottom: 18px; }
+.cart-list { display: flex; flex-direction: column; gap: 8px; }
+
+.cart-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
+  padding: 10px 12px;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+}
+
+.cr-icon {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(33,33,33,.08);
+  display: flex; align-items: center; justify-content: center;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--color-text-muted); }
+  &.servicio mat-icon { color: #7986CB; }
+  &.producto mat-icon { color: #4DB6AC; }
+  &.paquete  mat-icon { color: #D4A017; }
+}
+
+.cr-info {
+  flex: 1 1 110px; min-width: 90px;
+  display: flex; flex-direction: column; gap: 1px;
+}
+.cr-name { font-size: .875rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cr-unit { font-size: .72rem; color: var(--color-text-muted); }
+
+.cr-trailing {
+  display: flex; align-items: center; gap: 10px;
+  margin-left: auto;
+}
+
+.qty-stepper {
+  display: flex; align-items: center; gap: 2px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 20px; padding: 2px;
+
+  .qty-btn {
+    width: 28px; height: 28px; padding: 0;
+    border: none; border-radius: 50%; background: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--color-text); transition: var(--transition);
+    mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    &:hover  { background: var(--color-bg); }
+    &:active { transform: scale(.9); }
+  }
+  span { min-width: 18px; text-align: center; font-size: .85rem; font-weight: 700; }
+}
+
+.cr-subtotal { font-size: .875rem; font-weight: 700; min-width: 58px; text-align: right; }
+
+.cr-remove {
+  width: 32px !important; height: 32px !important; padding: 0 !important; line-height: 32px !important;
+  mat-icon { font-size: 18px; color: var(--color-warn); }
+}
+
+.empty-state {
+  text-align: center; padding: 24px 12px; color: var(--color-text-muted);
+  background: var(--color-bg); border-radius: var(--radius-md);
+  mat-icon { font-size: 32px; opacity: .35; }
+  p { font-size: .82rem; margin: 6px 0 0; }
+}
+
+// ─── Catálogo ─────────────────────────────────────────────────────────────────
+.catalog-section { margin-bottom: 16px; }
+
+.segmented-tabs {
+  display: flex; gap: 2px;
+  background: var(--color-bg); border-radius: 999px; padding: 3px; margin-bottom: 10px;
+
+  button {
+    flex: 1; border: none; background: none; cursor: pointer;
+    padding: 9px 4px; border-radius: 999px;
+    font-size: .78rem; font-weight: 600; color: var(--color-text-muted);
+    transition: var(--transition);
+    &.active { background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-sm); }
+  }
+}
+
+.search-field {
+  width: 100%;
+  ::ng-deep .mat-mdc-text-field-wrapper { height: 44px; }
+  ::ng-deep .mat-mdc-form-field-infix { min-height: 44px; padding-top: 10px !important; padding-bottom: 10px !important; }
+}
+
+.catalog-list {
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 190px; overflow-y: auto;
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  padding: 4px;
+}
+
+.catalog-row {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; border: none; background: none;
+  padding: 10px 8px; border-radius: var(--radius-sm);
+  cursor: pointer; transition: var(--transition);
+  text-align: left; font: inherit; color: inherit;
+
+  &:hover  { background: var(--color-bg); }
+  &:active { transform: scale(.98); }
+
+  .cat-name  { flex: 1; font-size: .84rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cat-price { font-size: .78rem; color: var(--color-text-muted); flex-shrink: 0; }
+
+  .cat-add {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    background: var(--color-primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    mat-icon { font-size: 17px; width: 17px; height: 17px; }
+  }
+}
+.catalog-empty { padding: 16px; text-align: center; font-size: .8rem; color: var(--color-text-muted); }
+
+// ─── Totales ──────────────────────────────────────────────────────────────────
+.totals-section {
+  background: var(--color-bg); border-radius: var(--radius-md);
+  padding: 12px 16px; margin-bottom: 4px;
+}
+.total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: .875rem; padding: 3px 0; color: var(--color-text-muted);
+
+  &.grand {
+    font-size: 1.2rem; font-weight: 700; color: var(--color-text);
+    padding-top: 8px; margin-top: 4px; border-top: 1px solid var(--color-border);
+  }
+}
+
+// ─── Footer ───────────────────────────────────────────────────────────────────
+.dialog-footer {
+  padding: 12px 20px !important;
+  display: flex; gap: 10px;
+
+  .btn-cancel {
+    border-radius: 24px; height: 46px; font-weight: 600;
+    flex: 0 0 auto;
+  }
+  .btn-save {
+    border-radius: 24px; height: 46px; font-weight: 600;
+    flex: 1;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    mat-icon { font-size: 18px; }
+  }
+}

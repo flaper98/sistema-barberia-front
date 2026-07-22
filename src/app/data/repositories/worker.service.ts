@@ -7,17 +7,6 @@ import { ApiResponse, PageResponse } from '../../core/models/api-response.model'
 import { environment } from '../../../environments/environment';
 import { matchesSearch } from '../../core/utils/search.util';
 
-export interface WorkerSummary {
-  barberoId: number;
-  nombreCompleto: string;
-  porcentajeComision: number;
-  totalVentas: number;
-  ingresosGenerados: number;
-  comisionCalculada: number;
-  serviciosRealizados: number;
-  periodo: string;
-}
-
 @Injectable({ providedIn: 'root' })
 export class WorkerService {
   private readonly url = `${environment.apiUrl}/workers`;
@@ -86,11 +75,5 @@ export class WorkerService {
     return this.http
       .delete<ApiResponse<void>>(`${this.url}/${id}`)
       .pipe(map(() => undefined));
-  }
-
-  getSummary(id: number): Observable<WorkerSummary> {
-    return this.http
-      .get<ApiResponse<WorkerSummary>>(`${this.url}/${id}/summary`)
-      .pipe(map(r => r.data!));
   }
 }

@@ -31,13 +31,14 @@ export class RolePermissionsComponent implements OnInit {
     this.loading = true;
     this.permissionService.obtenerMatriz().subscribe({
       next: matriz => {
+        const sinAcceso = { puedeVer: false, puedeEditar: false, puedeEliminar: false, puedeVerDetalle: false };
         this.filas = MODULOS.map(m => ({
           modulo: m.value,
           label: m.label,
           porRol: {
-            BARBER: matriz.BARBER?.[m.value] ?? { puedeVer: false, puedeEditar: false, puedeEliminar: false },
-            CASHIER: matriz.CASHIER?.[m.value] ?? { puedeVer: false, puedeEditar: false, puedeEliminar: false },
-            RECEPTION: matriz.RECEPTION?.[m.value] ?? { puedeVer: false, puedeEditar: false, puedeEliminar: false },
+            BARBER: matriz.BARBER?.[m.value] ?? { ...sinAcceso },
+            CASHIER: matriz.CASHIER?.[m.value] ?? { ...sinAcceso },
+            RECEPTION: matriz.RECEPTION?.[m.value] ?? { ...sinAcceso },
           },
         }));
         this.loading = false;
@@ -71,6 +72,20 @@ export class RolePermissionsComponent implements OnInit {
     }
   }
 
+  // "Ver detalle" (ventas/comisiones de un barbero por cada servicio/
+  // producto, con fecha) es un permiso aparte, solo para COMISIONES --
+  // no se muestra para BARBER porque a el no le aplica (siempre ve el
+  // detalle de sus propias ventas, sin pasar por esta matriz).
+  get filaComisiones(): FilaMatriz | undefined {
+    return this.filas.find(f => f.modulo === 'COMISIONES');
+  }
+
+  onVerDetalleChange(rol: 'CASHIER' | 'RECEPTION', marcado: boolean): void {
+    const fila = this.filaComisiones;
+    if (!fila) return;
+    fila.porRol[rol].puedeVerDetalle = marcado;
+  }
+
   guardar(): void {
     const items: RolPermisoItem[] = [];
     for (const fila of this.filas) {
@@ -82,6 +97,7 @@ export class RolePermissionsComponent implements OnInit {
           puedeVer: flags.puedeVer,
           puedeEditar: flags.puedeEditar,
           puedeEliminar: flags.puedeEliminar,
+          puedeVerDetalle: flags.puedeVerDetalle,
         });
       }
     }

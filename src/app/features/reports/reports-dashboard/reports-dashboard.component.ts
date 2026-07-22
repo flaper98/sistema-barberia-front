@@ -175,7 +175,7 @@ export class ReportsDashboardComponent implements OnInit, AfterViewInit {
     if (this.activeTab === 0) {
       this.descargarCsv(`ventas_${rango}.csv`,
         ['ID', 'Fecha', 'Cliente', 'Barbero', 'Subtotal', 'Descuento', 'Total', 'Método de pago', 'Estado', 'Items'],
-        this.ventas.map(v => [v.id, v.fecha, v.clienteNombre ?? '', v.barberoNombre, v.subtotal, v.descuento, v.total, v.metodoPago, v.estado, v.itemsCount]));
+        this.ventas.map(v => [v.id, v.fecha, v.clienteNombre ?? '', v.barberoNombre ?? '', v.subtotal, v.descuento, v.total, v.metodoPago, v.estado, v.itemsCount]));
     } else if (this.activeTab === 1) {
       this.descargarCsv(`citas_${rango}.csv`,
         ['ID', 'Fecha', 'Hora', 'Cliente', 'Barbero', 'Estado', 'Total estimado', 'Servicios'],
