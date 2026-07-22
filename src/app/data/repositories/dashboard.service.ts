@@ -9,7 +9,8 @@ import { toLocalDateStr } from '../../core/utils/date.util';
 
 interface DashboardApiData {
   ventasHoy: number;
-  ingresosHoy: number;
+  ingresosHoy: number | null;
+  comisionHoy: number | null;
   citasHoy: number;
   clientesAtendidos: number;
   productosStockBajo: number;
@@ -39,7 +40,8 @@ export class DashboardService {
             ventasHoy: d.ventasHoy,
             citasHoy: d.citasHoy,
             clientesAtendidos: d.clientesAtendidos,
-            ingresosHoy: d.ingresosHoy,
+            ingresosHoy: d.ingresosHoy ?? 0,
+            comisionHoy: d.comisionHoy ?? undefined,
             productosStockBajo: d.productosStockBajo,
             barberoTopNombre: d.barberoTopNombre ?? '-',
             barberoTopMonto: d.barberoTopMonto ?? 0,

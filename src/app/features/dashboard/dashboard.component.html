@@ -33,8 +33,8 @@
       <div class="stat-card accent">
         <div class="stat-icon accent"><mat-icon>attach_money</mat-icon></div>
         <div class="stat-info">
-          <div class="stat-value">S/ {{ stats.ingresosHoy | number:'1.2-2' }}</div>
-          <div class="stat-label">{{ authService.hasRole(['BARBER']) ? 'Mis ingresos de hoy' : 'Ingresos del día' }}</div>
+          <div class="stat-value">S/ {{ (authService.hasRole(['BARBER']) ? stats.comisionHoy : stats.ingresosHoy) | number:'1.2-2' }}</div>
+          <div class="stat-label">{{ authService.hasRole(['BARBER']) ? 'Mi comisión de hoy' : 'Ingresos del día' }}</div>
         </div>
       </div>
 
