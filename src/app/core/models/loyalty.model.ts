@@ -48,3 +48,16 @@ export interface ReglaFidelizacion {
   precio: number;
   aplicaFidelizacion: boolean;
 }
+
+// Aviso anticipado, ANTES de cobrar: si los items del carrito le completan
+// (una o mas veces) el sello al cliente -- ver LoyaltyService.previewParaVenta.
+export interface LoyaltyPreview {
+  aplica: boolean;
+  sellosActuales: number;
+  sellosNecesarios: number;
+  unidadesGanadas: number;
+  sellosResultantes: number;
+  completaRecompensa: boolean;
+  recompensasQueGanaria: number;
+  descripcionRecompensa?: string;
+}

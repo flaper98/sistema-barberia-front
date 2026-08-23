@@ -1,5 +1,5 @@
 export type ProductCategory = string;
-export type StockMovementType = 'ENTRADA' | 'SALIDA' | 'AJUSTE';
+export type StockMovementType = 'ENTRADA' | 'SALIDA' | 'AJUSTE' | 'CONSUMO' | 'CORTESIA';
 
 export interface Product {
   id: number;

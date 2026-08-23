@@ -2,7 +2,8 @@ import { Component, OnInit, AfterViewInit, ViewChild } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { Product } from '../../../core/models/product.model';
 import { Worker } from '../../../core/models/worker.model';
 import {
@@ -18,6 +19,7 @@ import { ReportService } from '../../../data/repositories/report.service';
 import { ProductService } from '../../../data/repositories/product.service';
 import { WorkerService } from '../../../data/repositories/worker.service';
 import { FinanceService } from '../../../data/repositories/finance.service';
+import { PermissionService } from '../../../core/auth/permission.service';
 import { toLocalDateStr } from '../../../core/utils/date.util';
 
 type ReportWidget = 'ventasPorBarbero' | 'topServicios' | 'topProductos' | 'lowStock';
@@ -58,8 +60,13 @@ export class ReportsDashboardComponent implements OnInit, AfterViewInit {
     private productService: ProductService,
     private workerService: WorkerService,
     private financeService: FinanceService,
+    private permissionService: PermissionService,
     private snackBar: MatSnackBar,
   ) {}
+
+  get puedeVerFinanzas(): boolean {
+    return this.permissionService.canView('FINANZAS');
+  }
 
   ngAfterViewInit(): void {
     this.ventasDataSource.paginator = this.paginator;
@@ -100,18 +107,28 @@ export class ReportsDashboardComponent implements OnInit, AfterViewInit {
     const desde = this.toIsoDate(this.fechaDesde);
     const hasta = this.toIsoDate(this.fechaHasta);
 
+    // Finanzas es un modulo aparte (un barbero no tiene acceso) -- si esas dos
+    // llamadas fallan por permisos, no deben tumbar el resto de las pestañas
+    // (Ventas/Citas/Fidelización), que si le corresponden.
+    const financeSummary$ = this.puedeVerFinanzas
+      ? this.reportService.getFinanceSummary(desde, hasta).pipe(catchError(() => of(null as FinanceSummary | null)))
+      : of(null as FinanceSummary | null);
+    const financeEntries$ = this.puedeVerFinanzas
+      ? this.financeService.search({
+          fechaDesde: desde,
+          fechaHasta: hasta,
+          tipo: this.tipoFinanza ?? undefined,
+        }).pipe(catchError(() => of([] as FinanceEntry[])))
+      : of([] as FinanceEntry[]);
+
     forkJoin({
       ventas: this.reportService.getSales(desde, hasta, 'COMPLETADA', this.barberoId),
       ventasPorBarbero: this.reportService.getSalesByWorker(desde, hasta, this.barberoId),
       topServicios: this.reportService.getTopServices(desde, hasta, 10, this.barberoId),
       topProductos: this.reportService.getTopProducts(desde, hasta, 10, this.barberoId),
       citas: this.reportService.getAppointments(desde, hasta, undefined, this.barberoId),
-      financeSummary: this.reportService.getFinanceSummary(desde, hasta),
-      financeEntries: this.financeService.search({
-        fechaDesde: desde,
-        fechaHasta: hasta,
-        tipo: this.tipoFinanza ?? undefined,
-      }),
+      financeSummary: financeSummary$,
+      financeEntries: financeEntries$,
     }).subscribe({
       next: ({ ventas, ventasPorBarbero, topServicios, topProductos, citas, financeSummary, financeEntries }) => {
         this.ventas = ventas;

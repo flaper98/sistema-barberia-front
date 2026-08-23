@@ -99,6 +99,58 @@
       </form>
     </div>
 
+    <!-- WhatsApp automatico -->
+    <div class="card">
+      <h3 class="settings-title"><mat-icon>chat</mat-icon> Bienvenida automática por WhatsApp</h3>
+      <div *ngIf="loadingWhatsapp" class="text-center"><mat-spinner diameter="32" style="margin:auto"></mat-spinner></div>
+      <form [formGroup]="whatsappForm" (ngSubmit)="saveWhatsapp()" *ngIf="!loadingWhatsapp">
+        <p class="text-muted text-sm mb-8">
+          Manda automáticamente el mensaje de bienvenida apenas se registra un cliente nuevo, sin que nadie
+          tenga que tocar nada. Usa la API oficial de WhatsApp Business (Meta) — necesitás una cuenta de
+          WhatsApp Business verificada, un número dedicado y una plantilla de mensaje ya aprobada por Meta.
+        </p>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Phone Number ID *</mat-label>
+          <input matInput formControlName="phoneNumberId">
+          <mat-hint>Meta Developers → tu app → WhatsApp → API Setup</mat-hint>
+          <mat-error *ngIf="whatsappForm.get('phoneNumberId')?.hasError('required')">Requerido</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>{{ whatsappTokenConfigured ? 'Nuevo access token' : 'Access token' }}</mat-label>
+          <input matInput type="password" formControlName="accessToken" autocomplete="new-password">
+          <mat-hint *ngIf="whatsappTokenConfigured">Ya hay uno guardado — dejalo en blanco para conservarlo</mat-hint>
+          <mat-hint *ngIf="!whatsappTokenConfigured">Token permanente de un usuario del sistema (System User), no el temporal de 24h</mat-hint>
+        </mat-form-field>
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre de la plantilla *</mat-label>
+            <input matInput formControlName="templateName" placeholder="bienvenida_cliente">
+            <mat-error *ngIf="whatsappForm.get('templateName')?.hasError('required')">Requerido</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Idioma de la plantilla *</mat-label>
+            <input matInput formControlName="languageCode" placeholder="es">
+            <mat-error *ngIf="whatsappForm.get('languageCode')?.hasError('required')">Requerido</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Versión Graph API *</mat-label>
+            <input matInput formControlName="graphApiVersion" placeholder="v21.0">
+            <mat-error *ngIf="whatsappForm.get('graphApiVersion')?.hasError('required')">Requerido</mat-error>
+          </mat-form-field>
+        </div>
+        <mat-slide-toggle formControlName="enabled" class="mb-16">Envío automático activo</mat-slide-toggle>
+        <p class="text-muted text-sm mb-8" *ngIf="whatsappForm.invalid && whatsappForm.touched">
+          Completá los campos marcados en rojo antes de guardar.
+        </p>
+        <div class="form-actions">
+          <button mat-flat-button color="primary" type="submit" [disabled]="savingWhatsapp">
+            <mat-spinner diameter="16" *ngIf="savingWhatsapp"></mat-spinner>
+            <span *ngIf="!savingWhatsapp">Guardar</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
     <!-- Loyalty config -->
     <div class="card" *ngIf="loyaltyForm">
       <h3 class="settings-title"><mat-icon>loyalty</mat-icon> Configuración fidelización</h3>

@@ -75,7 +75,10 @@
 
   .dr-nombre { }
   .dr-fecha { font-size: .78rem; min-width: 60px; }
-  .dr-comision { font-weight: 600; color: var(--color-success); text-align: right; min-width: 70px; }
+  .dr-comision {
+    font-weight: 600; color: var(--color-success); text-align: right; min-width: 70px;
+    &.negative { color: var(--color-warn); }
+  }
 }
 
 .total-bar {

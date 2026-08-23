@@ -6,7 +6,8 @@ import { PermissionService } from '../../../core/auth/permission.service';
 import { CommissionService } from '../../../data/repositories/commission.service';
 import { WorkerService } from '../../../data/repositories/worker.service';
 import { WorkerSelector } from '../../../core/models/worker.model';
-import { ResumenComision, CorteComision, TasaComision, DetalleComision } from '../../../core/models/commission.model';
+import { ResumenComision, CorteComision, TasaComision, DetalleComision, Propina, DescuentoConsumo } from '../../../core/models/commission.model';
+import { forkJoin } from 'rxjs';
 import { toLocalDateStr } from '../../../core/utils/date.util';
 import { matchesSearch } from '../../../core/utils/search.util';
 import { RegistrarPropinaDialogComponent } from '../registrar-propina-dialog/registrar-propina-dialog.component';
@@ -51,6 +52,13 @@ export class CommissionsDashboardComponent implements OnInit {
   // pide recien al abrir el desplegable, no de una, porque no todos lo
   // necesitan ver siempre.
   detalle: DetalleComision[] = [];
+  // Propinas/descuentos son entidades aparte (no vienen en "detalle") --
+  // se piden con lo mismo al abrir el desplegable y se filtran aca al
+  // rango de fechas elegido y a "todavia pendiente" (sin corteId), para
+  // que coincidan con los totales de propinasPendientes/descuentosPendientes
+  // del resumen de arriba (ver ResumenComision).
+  propinas: Propina[] = [];
+  descuentos: DescuentoConsumo[] = [];
   mostrarDetalle = false;
   loadingDetalle = false;
   detalleCargado = false;
@@ -127,6 +135,8 @@ export class CommissionsDashboardComponent implements OnInit {
     // Cambio de barbero/fechas invalida el detalle ya cargado -- se vuelve
     // a pedir recien si lo abren de nuevo, para no mostrar datos viejos.
     this.detalle = [];
+    this.propinas = [];
+    this.descuentos = [];
     this.detalleCargado = false;
     this.mostrarDetalle = false;
   }
@@ -160,8 +170,22 @@ export class CommissionsDashboardComponent implements OnInit {
     if (!this.selectedWorkerId) return;
     this.loadingDetalle = true;
     this.detalleCargado = true;
-    this.commissionService.getResumenDetalle(this.selectedWorkerId, toLocalDateStr(this.fechaDesde), toLocalDateStr(this.fechaHasta)).subscribe({
-      next: d => { this.detalle = d; this.loadingDetalle = false; },
+    const barberoId = this.selectedWorkerId;
+    forkJoin({
+      items: this.commissionService.getResumenDetalle(barberoId, toLocalDateStr(this.fechaDesde), toLocalDateStr(this.fechaHasta)),
+      // Propinas/descuentos no tienen filtro por fecha en el backend (son
+      // un listado general del barbero) -- se pide una pagina grande y se
+      // filtra aca mismo al rango elegido (ver detallePropinas/
+      // detalleDescuentos), igual que hace el resto de esta pantalla.
+      propinas: this.commissionService.getPropinas(barberoId, 0, 200),
+      descuentos: this.commissionService.getDescuentos(barberoId, 0, 200),
+    }).subscribe({
+      next: ({ items, propinas, descuentos }) => {
+        this.detalle = items;
+        this.propinas = propinas;
+        this.descuentos = descuentos;
+        this.loadingDetalle = false;
+      },
       error: (err: Error) => { this.loadingDetalle = false; this.snackBar.open(err.message, 'Cerrar', { duration: 4000 }); },
     });
   }
@@ -172,6 +196,25 @@ export class CommissionsDashboardComponent implements OnInit {
 
   get detalleProductos(): DetalleComision[] {
     return this.detalle.filter(d => d.tipo === 'PRODUCTO');
+  }
+
+  // Solo las pendientes (todavia sin corteId) dentro del rango de fechas
+  // elegido -- es lo mismo que compone "propinasPendientes"/
+  // "descuentosPendientes" del resumen de arriba.
+  get detallePropinas(): Propina[] {
+    const desde = toLocalDateStr(this.fechaDesde);
+    const hasta = toLocalDateStr(this.fechaHasta);
+    return this.propinas.filter(p => !p.corteId && p.fecha >= desde && p.fecha <= hasta);
+  }
+
+  get detalleDescuentos(): DescuentoConsumo[] {
+    const desde = toLocalDateStr(this.fechaDesde);
+    const hasta = toLocalDateStr(this.fechaHasta);
+    return this.descuentos.filter(d => !d.corteId && d.fecha >= desde && d.fecha <= hasta);
+  }
+
+  get hayDetalle(): boolean {
+    return this.detalle.length > 0 || this.detallePropinas.length > 0 || this.detalleDescuentos.length > 0;
   }
 
   abrirPropina(): void {

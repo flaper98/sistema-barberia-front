@@ -28,7 +28,7 @@
           <mat-option *ngFor="let w of workers" [value]="w.id">{{ w.nombre }} {{ w.apellido }}</mat-option>
         </mat-select>
       </mat-form-field>
-      <mat-form-field appearance="outline" *ngIf="activeTab === 2">
+      <mat-form-field appearance="outline" *ngIf="activeTab === 2 && puedeVerFinanzas">
         <mat-label>Tipo</mat-label>
         <mat-select [(ngModel)]="tipoFinanza" (selectionChange)="onFiltersChange()">
           <mat-option [value]="null">Todos</mat-option>

@@ -1,10 +1,16 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, forkJoin } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { LoyaltyAccount, LoyaltyMovement, LoyaltyConfig, Reward, ReglaFidelizacion } from '../../core/models/loyalty.model';
+import { LoyaltyAccount, LoyaltyMovement, LoyaltyConfig, Reward, ReglaFidelizacion, LoyaltyPreview } from '../../core/models/loyalty.model';
 import { ApiResponse, PageResponse } from '../../core/models/api-response.model';
 import { environment } from '../../../environments/environment';
+
+export interface PreviewItem {
+  tipo: 'SERVICIO' | 'PRODUCTO' | 'PAQUETE';
+  itemId: number;
+  cantidad: number;
+}
 
 const EMPTY_PAGE: PageResponse<LoyaltyAccount> = { content: [], page: 0, size: 0, totalElements: 0, totalPages: 0, first: true, last: true };
 
@@ -134,5 +140,46 @@ export class LoyaltyService {
 
   actualizarReglaPaquete(id: number, aplicaFidelizacion: boolean): Observable<ReglaFidelizacion> {
     return this.http.patch<ApiResponse<ReglaFidelizacion>>(`${this.url}/rules/packages/${id}`, { aplicaFidelizacion }).pipe(map(r => r.data!));
+  }
+
+  // Aviso ANTES de cobrar: si los items que se estan por cobrar completan
+  // (una o mas veces) el sello del cliente. No hay endpoint dedicado en el
+  // backend para esto -- se arma con los mismos datos que ya expone
+  // Fidelizacion (cuenta del cliente + config + reglas por item), la misma
+  // cuenta que hace FidelizacionServiceImpl.agregarSello del lado del
+  // servidor cuando la venta se completa de verdad.
+  previewParaVenta(clienteId: number, items: PreviewItem[]): Observable<LoyaltyPreview> {
+    return forkJoin({
+      cuenta: this.getByCustomer(clienteId),
+      config: this.getConfig(),
+      servicios: this.getReglasServicios(),
+      productos: this.getReglasProductos(),
+      paquetes: this.getReglasPaquetes(),
+    }).pipe(map(({ cuenta, config, servicios, productos, paquetes }) => {
+      if (!config.activo) {
+        return { aplica: false, sellosActuales: 0, sellosNecesarios: 0, unidadesGanadas: 0, sellosResultantes: 0, completaRecompensa: false, recompensasQueGanaria: 0 };
+      }
+      const mapas: Record<PreviewItem['tipo'], Map<number, boolean>> = {
+        SERVICIO: new Map(servicios.map(s => [s.id, s.aplicaFidelizacion])),
+        PRODUCTO: new Map(productos.map(p => [p.id, p.aplicaFidelizacion])),
+        PAQUETE: new Map(paquetes.map(pk => [pk.id, pk.aplicaFidelizacion])),
+      };
+      const unidadesElegibles = items.reduce((acc, it) => acc + (mapas[it.tipo].get(it.itemId) ? it.cantidad : 0), 0);
+      const ganancia = (config.sellosPorGanancia || 1) * unidadesElegibles;
+      const sellosSimulados = cuenta.sellosActuales + ganancia;
+      const necesarios = config.sellosNecesarios || 1;
+      const recompensasQueGanaria = Math.floor(sellosSimulados / necesarios);
+      const sellosResultantes = sellosSimulados % necesarios;
+      return {
+        aplica: true,
+        sellosActuales: cuenta.sellosActuales,
+        sellosNecesarios: necesarios,
+        unidadesGanadas: ganancia,
+        sellosResultantes,
+        completaRecompensa: recompensasQueGanaria > 0,
+        recompensasQueGanaria,
+        descripcionRecompensa: cuenta.descripcionRecompensa || config.descripcionRecompensa,
+      };
+    }));
   }
 }

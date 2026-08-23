@@ -4,6 +4,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { LoyaltyService } from '../../../data/repositories/loyalty.service';
 import { BusinessConfigService } from '../../../data/repositories/business-config.service';
 import { IcloudConfigService } from '../../../data/repositories/icloud-config.service';
+import { WhatsAppConfigService } from '../../../data/repositories/whatsapp-config.service';
 import { LoyaltyConfig } from '../../../core/models/loyalty.model';
 import { DEFAULT_WHATSAPP_WELCOME_TEMPLATE, DEFAULT_WHATSAPP_REMINDER_TEMPLATE } from '../../../core/models/business-config.model';
 import { renderWhatsappTemplate } from '../../../core/utils/whatsapp.util';
@@ -13,10 +14,14 @@ export class SettingsDashboardComponent implements OnInit {
   barberyForm!: FormGroup;
   loyaltyForm!: FormGroup;
   icloudForm!: FormGroup;
+  whatsappForm!: FormGroup;
   loadingBarbery = true;
   loadingIcloud = true;
+  loadingWhatsapp = true;
   savingIcloud = false;
+  savingWhatsapp = false;
   icloudPasswordConfigured = false;
+  whatsappTokenConfigured = false;
   saving = false;
 
   readonly paymentMethods = ['Efectivo', 'Tarjeta de crédito/débito', 'Yape', 'Plin', 'Transferencia bancaria'];
@@ -32,6 +37,7 @@ export class SettingsDashboardComponent implements OnInit {
     private loyaltyService: LoyaltyService,
     private businessConfigService: BusinessConfigService,
     private icloudConfigService: IcloudConfigService,
+    private whatsappConfigService: WhatsAppConfigService,
     private snackBar: MatSnackBar,
   ) {}
 
@@ -90,6 +96,34 @@ export class SettingsDashboardComponent implements OnInit {
         this.snackBar.open(err.message, 'Cerrar', { duration: 4000 });
       },
     });
+
+    this.whatsappForm = this.fb.group({
+      phoneNumberId:   ['', Validators.required],
+      accessToken:     [''],
+      templateName:    ['', Validators.required],
+      languageCode:    ['es', Validators.required],
+      graphApiVersion: ['v21.0', Validators.required],
+      enabled:         [false],
+    });
+
+    this.loadingWhatsapp = true;
+    this.whatsappConfigService.obtener().subscribe({
+      next: cfg => {
+        this.whatsappForm.patchValue({
+          phoneNumberId: cfg.phoneNumberId,
+          templateName: cfg.templateName,
+          languageCode: cfg.languageCode || 'es',
+          graphApiVersion: cfg.graphApiVersion || 'v21.0',
+          enabled: cfg.enabled,
+        });
+        this.whatsappTokenConfigured = cfg.accessTokenConfigured;
+        this.loadingWhatsapp = false;
+      },
+      error: (err: Error) => {
+        this.loadingWhatsapp = false;
+        this.snackBar.open(err.message, 'Cerrar', { duration: 4000 });
+      },
+    });
   }
 
   get vistaPreviaMensaje(): string {
@@ -130,6 +164,23 @@ export class SettingsDashboardComponent implements OnInit {
       },
       error: (err: Error) => {
         this.savingIcloud = false;
+        this.snackBar.open(err.message, 'Cerrar', { duration: 5000 });
+      },
+    });
+  }
+
+  saveWhatsapp(): void {
+    if (this.whatsappForm.invalid) { this.whatsappForm.markAllAsTouched(); return; }
+    this.savingWhatsapp = true;
+    this.whatsappConfigService.actualizar(this.whatsappForm.value).subscribe({
+      next: cfg => {
+        this.savingWhatsapp = false;
+        this.whatsappTokenConfigured = cfg.accessTokenConfigured;
+        this.whatsappForm.patchValue({ accessToken: '' });
+        this.snackBar.open('Configuración de WhatsApp guardada', '', { duration: 2500 });
+      },
+      error: (err: Error) => {
+        this.savingWhatsapp = false;
         this.snackBar.open(err.message, 'Cerrar', { duration: 5000 });
       },
     });

@@ -1,6 +1,6 @@
 <h2 mat-dialog-title>Aceptar y cobrar solicitud #{{ sale.id }}</h2>
 
-<mat-dialog-content style="min-width:380px; max-width:440px;">
+<mat-dialog-content style="min-width:380px; max-width:520px;">
   <div class="text-center mt-24 mb-24" *ngIf="loading">
     <mat-spinner diameter="36" style="margin:auto"></mat-spinner>
     <p class="text-muted text-sm mt-8">Comprobando el detalle más reciente...</p>
@@ -11,11 +11,38 @@
       <div class="info-item"><mat-icon>content_cut</mat-icon><span>{{ sale.barberoNombre || 'Sin barbero' }}</span></div>
     </div>
 
+    <div class="section-header-row">
+      <p class="text-muted text-sm" style="margin:0">Ítems <mat-spinner diameter="14" *ngIf="savingItems" style="display:inline-block;vertical-align:middle;margin-left:6px"></mat-spinner></p>
+      <button mat-button type="button" color="primary" class="new-customer-link" (click)="toggleAgregarItem()" [disabled]="savingItems">
+        <mat-icon>add</mat-icon> {{ mostrarAgregarItem ? 'Cerrar' : 'Agregar producto o servicio' }}
+      </button>
+    </div>
+
+    <div class="mb-16" *ngIf="mostrarAgregarItem">
+      <mat-form-field appearance="outline" class="w-full">
+        <input matInput [(ngModel)]="searchAgregarItem" placeholder="Buscar servicio o producto...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <div class="customer-list mb-8" *ngIf="resultadosAgregarItem.length">
+        <div class="customer-item" *ngFor="let r of resultadosAgregarItem" (click)="agregarItem(r)">
+          <div class="customer-info">
+            <span class="customer-name">{{ r.nombre }}</span>
+            <span class="text-muted text-sm">{{ r.tipo === 'SERVICIO' ? 'Servicio' : r.tipo === 'PRODUCTO' ? 'Producto' : 'Paquete' }} · S/ {{ r.precio | number:'1.2-2' }}</span>
+          </div>
+          <mat-icon>add_circle_outline</mat-icon>
+        </div>
+      </div>
+      <p class="text-muted text-sm" *ngIf="searchAgregarItem.trim() && !resultadosAgregarItem.length">No se encontraron resultados.</p>
+    </div>
+
     <div class="order-items mb-16">
       <div class="order-item" *ngFor="let item of sale.items">
-        <span class="oi-qty">{{ item.cantidad }}x</span>
-        <span class="oi-name">{{ item.nombre }}</span>
+        <span class="oi-name">{{ item.nombre }} <span class="text-muted text-sm">S/ {{ item.precio | number:'1.2-2' }} c/u</span></span>
+        <button mat-icon-button type="button" [disabled]="savingItems" (click)="cambiarCantidadItem(item, -1)"><mat-icon>remove_circle_outline</mat-icon></button>
+        <span class="oi-qty">{{ item.cantidad }}</span>
+        <button mat-icon-button type="button" [disabled]="savingItems" (click)="cambiarCantidadItem(item, 1)"><mat-icon>add_circle_outline</mat-icon></button>
         <span class="oi-price">S/ {{ item.subtotal | number:'1.2-2' }}</span>
+        <button mat-icon-button type="button" color="warn" [disabled]="savingItems" (click)="quitarItem(item)" matTooltip="Quitar"><mat-icon>delete</mat-icon></button>
       </div>
     </div>
 
@@ -52,13 +79,27 @@
         </div>
         <div class="no-results" *ngIf="!customers.length">
           <mat-icon>person_search</mat-icon>
-          <p>No se encontraron clientes{{ searchCustomer ? ' con "' + searchCustomer + '"' : '' }}.</p>
-          <button mat-stroked-button type="button" color="primary" (click)="abrirNuevoCliente()">
-            <mat-icon>person_add</mat-icon> Crear cliente nuevo
-          </button>
+          <p>No se encontraron clientes{{ searchCustomer ? ' con "' + searchCustomer + '"' : '' }}. Usá "Nuevo cliente" arriba para crearlo.</p>
         </div>
       </div>
       <p class="selection-summary mb-16" *ngIf="selectedCustomer">Cliente seleccionado: <strong>{{ selectedCustomer.nombre }} {{ selectedCustomer.apellido }}</strong></p>
+      <button
+        mat-stroked-button type="button" color="primary" class="mb-16"
+        *ngIf="selectedCustomer && selectedCustomer.id === clienteRecienCreadoId"
+        (click)="enviarBienvenidaWhatsapp()">
+        <mat-icon>chat</mat-icon> Enviar bienvenida por WhatsApp
+      </button>
+
+      <div class="notice-banner mb-16" *ngIf="loyaltyPreview?.aplica && loyaltyPreview?.completaRecompensa" style="background:rgba(76,175,80,.12); border-color:var(--color-success)">
+        <mat-icon style="color:var(--color-success)">celebration</mat-icon>
+        <span>
+          ¡Con este pago el cliente completa su sello
+          <ng-container *ngIf="(loyaltyPreview?.recompensasQueGanaria ?? 0) > 1">(x{{ loyaltyPreview?.recompensasQueGanaria }})</ng-container>!
+        </span>
+      </div>
+      <p class="text-muted text-sm mb-16" *ngIf="loyaltyPreview?.aplica && !loyaltyPreview?.completaRecompensa">
+        Fidelización: {{ loyaltyPreview?.sellosActuales }}/{{ loyaltyPreview?.sellosNecesarios }} sellos — con esta venta le quedarían {{ loyaltyPreview?.sellosResultantes }}/{{ loyaltyPreview?.sellosNecesarios }}.
+      </p>
     </ng-container>
 
     <div class="new-customer-form mb-16" *ngIf="showNewCustomerForm" [formGroup]="newCustomerForm">

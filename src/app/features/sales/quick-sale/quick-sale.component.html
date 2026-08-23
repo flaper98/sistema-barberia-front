@@ -435,9 +435,16 @@
         </div>
       </div>
 
-      <div class="loyalty-notice" *ngIf="selectedCustomer && hasServicesInCart() && !esBarbero">
+      <div class="loyalty-notice" *ngIf="loyaltyPreview?.aplica && loyaltyPreview?.completaRecompensa" style="background:rgba(76,175,80,.12)">
+        <mat-icon style="color:var(--color-success)">celebration</mat-icon>
+        <span>
+          ¡Con este pago <strong>{{ selectedCustomer?.nombre }}</strong> completa su sello
+          <ng-container *ngIf="(loyaltyPreview?.recompensasQueGanaria ?? 0) > 1">(x{{ loyaltyPreview?.recompensasQueGanaria }})</ng-container>!
+        </span>
+      </div>
+      <div class="loyalty-notice" *ngIf="loyaltyPreview?.aplica && !loyaltyPreview?.completaRecompensa">
         <mat-icon>loyalty</mat-icon>
-        <span>Se sumará 1 sello de fidelidad a <strong>{{ selectedCustomer.nombre }}</strong></span>
+        <span>Fidelización de <strong>{{ selectedCustomer?.nombre }}</strong>: {{ loyaltyPreview?.sellosActuales }}/{{ loyaltyPreview?.sellosNecesarios }} — con esta venta le quedarían {{ loyaltyPreview?.sellosResultantes }}/{{ loyaltyPreview?.sellosNecesarios }}</span>
       </div>
 
       <div class="loyalty-notice" *ngIf="esBarbero">

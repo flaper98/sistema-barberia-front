@@ -174,7 +174,7 @@
           <div class="text-center mt-16 mb-16" *ngIf="loadingDetalle"><mat-spinner diameter="28" style="margin:auto"></mat-spinner></div>
 
           <ng-container *ngIf="!loadingDetalle">
-            <p class="text-muted text-center mt-16 mb-16" *ngIf="!detalle.length">Sin ventas en este período</p>
+            <p class="text-muted text-center mt-16 mb-16" *ngIf="!hayDetalle">Sin movimientos en este período</p>
 
             <div class="detalle-grupo" *ngIf="detalleServicios.length">
               <p class="dg-titulo"><mat-icon>content_cut</mat-icon> Servicios</p>
@@ -191,6 +191,24 @@
                 <span class="dr-nombre">{{ d.nombre }} <span class="text-muted">x{{ d.cantidad }}</span></span>
                 <span class="dr-fecha text-muted">{{ d.fecha | date:'dd/MM/yy' }}</span>
                 <span class="dr-comision">+ S/ {{ d.comision | number:'1.2-2' }}</span>
+              </div>
+            </div>
+
+            <div class="detalle-grupo" *ngIf="detallePropinas.length">
+              <p class="dg-titulo"><mat-icon>volunteer_activism</mat-icon> Propinas</p>
+              <div class="detalle-row" *ngFor="let p of detallePropinas">
+                <span class="dr-nombre">{{ p.notas || 'Propina' }}</span>
+                <span class="dr-fecha text-muted">{{ p.fecha | date:'dd/MM/yy' }}</span>
+                <span class="dr-comision positive">+ S/ {{ p.monto | number:'1.2-2' }}</span>
+              </div>
+            </div>
+
+            <div class="detalle-grupo" *ngIf="detalleDescuentos.length">
+              <p class="dg-titulo"><mat-icon>local_drink</mat-icon> Consumo</p>
+              <div class="detalle-row" *ngFor="let d of detalleDescuentos">
+                <span class="dr-nombre">{{ d.productoNombre }} <span class="text-muted">x{{ d.cantidad }}</span></span>
+                <span class="dr-fecha text-muted">{{ d.fecha | date:'dd/MM/yy' }}</span>
+                <span class="dr-comision negative">- S/ {{ d.montoTotal | number:'1.2-2' }}</span>
               </div>
             </div>
           </ng-container>

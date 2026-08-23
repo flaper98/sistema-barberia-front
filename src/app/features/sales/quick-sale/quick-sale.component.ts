@@ -17,6 +17,8 @@ import { PaqueteService } from '../../../data/repositories/paquete.service';
 import { SaleService } from '../../../data/repositories/sale.service';
 import { AppointmentService } from '../../../data/repositories/appointment.service';
 import { AuthService } from '../../../core/auth/auth.service';
+import { LoyaltyService } from '../../../data/repositories/loyalty.service';
+import { LoyaltyPreview } from '../../../core/models/loyalty.model';
 import { matchesSearch } from '../../../core/utils/search.util';
 import { forkJoin, Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -97,6 +99,10 @@ export class QuickSaleComponent implements OnInit {
   lastSaleEstado: string | null = null;
   itemTab = 0;
 
+  // Aviso ANTES de cobrar: si con esta venta el cliente completa (una o mas
+  // veces) su sello de fidelizacion -- ver LoyaltyService.previewParaVenta.
+  loyaltyPreview: LoyaltyPreview | null = null;
+
   readonly paymentMethods: { value: PaymentMethod; label: string; icon: string }[] = [
     { value: 'EFECTIVO',      label: 'Efectivo',      icon: 'payments' },
     { value: 'TARJETA',       label: 'Tarjeta',       icon: 'credit_card' },
@@ -115,6 +121,7 @@ export class QuickSaleComponent implements OnInit {
     private saleService: SaleService,
     private appointmentService: AppointmentService,
     private authService: AuthService,
+    private loyaltyService: LoyaltyService,
     private snackBar: MatSnackBar,
     private route: ActivatedRoute,
     private router: Router,
@@ -415,6 +422,17 @@ export class QuickSaleComponent implements OnInit {
       return;
     }
     this.step = 'payment';
+    this.cargarLoyaltyPreview();
+  }
+
+  private cargarLoyaltyPreview(): void {
+    this.loyaltyPreview = null;
+    if (!this.selectedCustomer || this.esBarbero) return;
+    const items = this.cartItems.map(i => ({ tipo: i.tipo, itemId: i.itemId, cantidad: i.cantidad }));
+    this.loyaltyService.previewParaVenta(this.selectedCustomer.id, items).subscribe({
+      next: p => (this.loyaltyPreview = p),
+      error: () => {},
+    });
   }
 
   confirmSale(): void {
@@ -462,10 +480,8 @@ export class QuickSaleComponent implements OnInit {
   }
 
   newSale(): void {
-    this.step = 'setup';
     this.selectedCustomer = null;
     this.selectedBarberoCustomer = null;
-    this.selectedWorker   = null;
     this.cartItems = [];
     this.discount  = 0;
     this.selectedPayment = 'EFECTIVO';
@@ -478,6 +494,23 @@ export class QuickSaleComponent implements OnInit {
     this.lastSaleEstado = null;
     this.citaId = null;
     this.citaOrigen = null;
+    this.loyaltyPreview = null;
+
+    // Como ya estamos parados en /sales/quick, navegar a la misma ruta no
+    // vuelve a correr ngOnInit -- por eso el barbero (a diferencia de
+    // ADMIN/CASHIER/RECEPTION) necesita que su barbero propio se
+    // re-derive aca mismo, igual que en ngOnInit, en vez de quedar en null
+    // (lo que antes hacia aparecer "Tu usuario no esta vinculado a un
+    // barbero" aunque si lo estuviera).
+    if (this.esBarbero) {
+      const miBarberoId = this.authService.currentUser?.barberoId;
+      this.selectedWorker = this.workers.find(w => w.id === miBarberoId) ?? null;
+      this.step = this.selectedWorker ? 'items' : 'setup';
+    } else {
+      this.selectedWorker = null;
+      this.step = 'setup';
+    }
+
     this.router.navigate(['/sales/quick']);
   }
 
