@@ -45,23 +45,17 @@
         <p class="stamps-label" *ngIf="loyaltyAccount">
           {{ loyaltyAccount.sellosActuales }} / {{ loyaltyAccount.sellosNecesarios }} sellos
         </p>
-        <div class="reward-available" *ngIf="customer.recompensasDisponibles > 0 && !editandoRecompensa">
+        <div class="reward-available" *ngIf="customer.recompensasDisponibles > 0">
           <mat-icon>card_giftcard</mat-icon>
-          <span>{{ customer.recompensasDisponibles }} premio(s) disponible(s): {{ loyaltyAccount?.descripcionRecompensa || descripcionRecompensa }}</span>
-          <button mat-icon-button *ngIf="puedeEditarFidelizacion" (click)="empezarEdicionRecompensa()" matTooltip="Editar premio"><mat-icon>edit</mat-icon></button>
-          <button mat-flat-button color="accent" *ngIf="puedeEditarFidelizacion" (click)="redeemReward()">Canjear</button>
-        </div>
-        <div class="reward-edit" *ngIf="customer.recompensasDisponibles > 0 && editandoRecompensa">
-          <mat-form-field appearance="outline" class="w-full" style="margin-bottom:-1.25em;">
-            <mat-label>Premio para este cliente</mat-label>
-            <mat-select [(ngModel)]="descripcionRecompensaEditada">
-              <mat-option *ngFor="let p of premios" [value]="p.descripcion">{{ p.descripcion }}</mat-option>
+          <span>{{ customer.recompensasDisponibles }} premio(s) disponible(s)</span>
+          <mat-form-field appearance="outline" class="w-full" *ngIf="esAdmin">
+            <mat-label>Premio a entregar</mat-label>
+            <mat-select [(ngModel)]="premioSeleccionadoId">
+              <mat-option *ngFor="let p of premios" [value]="p.id">{{ p.descripcion }}</mat-option>
             </mat-select>
           </mat-form-field>
-          <div class="mt-8" style="display:flex; gap:8px;">
-            <button mat-stroked-button (click)="cancelarEdicionRecompensa()">Cancelar</button>
-            <button mat-flat-button color="primary" (click)="guardarRecompensa()">Guardar</button>
-          </div>
+          <span class="text-sm" *ngIf="!premios.length">No hay premios activos.</span>
+          <button mat-flat-button color="accent" *ngIf="esAdmin" [disabled]="!premioSeleccionadoId" (click)="redeemReward()">Entregar premio</button>
         </div>
         <div class="mt-8" *ngIf="puedeEditarFidelizacion">
           <button mat-stroked-button (click)="addStamp()">

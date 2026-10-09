@@ -53,47 +53,97 @@
 
     <!-- Tab: Ventas -->
     <ng-container *ngIf="activeTab === 0">
-      <div class="metric-strip mb-24">
-        <div class="metric"><span class="metric-value">{{ totalVentas }}</span><span class="metric-label">Total ventas</span></div>
-        <div class="metric"><span class="metric-value">S/ {{ totalIngresos | number:'1.2-2' }}</span><span class="metric-label">Total ingresos</span></div>
+      <div class="stats-grid mb-24">
+        <div class="stat-card primary">
+          <div class="stat-icon primary"><mat-icon>point_of_sale</mat-icon></div>
+          <div class="stat-info">
+            <div class="stat-value">{{ totalVentas }}</div>
+            <div class="stat-label">Total ventas</div>
+          </div>
+        </div>
+        <div class="stat-card success">
+          <div class="stat-icon success"><mat-icon>payments</mat-icon></div>
+          <div class="stat-info">
+            <div class="stat-value">S/ {{ totalIngresos | number:'1.2-2' }}</div>
+            <div class="stat-label">Total ingresos</div>
+          </div>
+        </div>
+        <div class="stat-card accent">
+          <div class="stat-icon accent"><mat-icon>trending_up</mat-icon></div>
+          <div class="stat-info">
+            <div class="stat-value">S/ {{ ticketPromedio | number:'1.2-2' }}</div>
+            <div class="stat-label">Ticket promedio</div>
+          </div>
+        </div>
       </div>
 
-      <div class="card mb-24">
-        <h3 class="card-title-rpt"><mat-icon>receipt_long</mat-icon> Listado de ventas</h3>
-        <table mat-table [dataSource]="ventasDataSource" class="w-full">
-          <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef>#</th>
-            <td mat-cell *matCellDef="let v">{{ v.id }}</td>
-          </ng-container>
-          <ng-container matColumnDef="fecha">
-            <th mat-header-cell *matHeaderCellDef>Fecha</th>
-            <td mat-cell *matCellDef="let v">{{ v.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
-          </ng-container>
-          <ng-container matColumnDef="clienteNombre">
-            <th mat-header-cell *matHeaderCellDef class="col-grow">Cliente</th>
-            <td mat-cell *matCellDef="let v" class="col-grow">{{ v.clienteNombre || 'Sin cliente' }}</td>
-          </ng-container>
-          <ng-container matColumnDef="barberoNombre">
-            <th mat-header-cell *matHeaderCellDef>Barbero</th>
-            <td mat-cell *matCellDef="let v">{{ v.barberoNombre || 'Sin barbero' }}</td>
-          </ng-container>
-          <ng-container matColumnDef="metodoPago">
-            <th mat-header-cell *matHeaderCellDef>Método de pago</th>
-            <td mat-cell *matCellDef="let v">{{ v.metodoPago }}</td>
-          </ng-container>
-          <ng-container matColumnDef="total">
-            <th mat-header-cell *matHeaderCellDef>Total</th>
-            <td mat-cell *matCellDef="let v">S/ {{ v.total | number:'1.2-2' }}</td>
-          </ng-container>
-          <ng-container matColumnDef="estado">
-            <th mat-header-cell *matHeaderCellDef>Estado</th>
-            <td mat-cell *matCellDef="let v"><span class="status-chip" [ngClass]="v.estado.toLowerCase()">{{ v.estado }}</span></td>
-          </ng-container>
-          <tr mat-header-row *matHeaderRowDef="ventasColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: ventasColumns;"></tr>
-        </table>
-        <div class="empty-msg" *ngIf="!ventas.length">Sin ventas en este periodo</div>
-        <mat-paginator [pageSize]="20" [pageSizeOptions]="[20,50,100]" showFirstLastButtons [hidden]="!ventas.length"></mat-paginator>
+      <div class="stock-alert-banner mb-24" *ngIf="lowStock.length > 0">
+        <mat-icon>warning</mat-icon>
+        <span><strong>{{ lowStock.length }}</strong> producto(s) con stock bajo — revisa Inventario cuando puedas.</span>
+      </div>
+
+      <div class="ventas-layout mb-24">
+        <div class="card ventas-table-card">
+          <h3 class="card-title-rpt"><mat-icon>receipt_long</mat-icon> Listado de ventas</h3>
+          <table mat-table [dataSource]="ventasDataSource" class="w-full">
+            <ng-container matColumnDef="id">
+              <th mat-header-cell *matHeaderCellDef>#</th>
+              <td mat-cell *matCellDef="let v">{{ v.id }}</td>
+            </ng-container>
+            <ng-container matColumnDef="fecha">
+              <th mat-header-cell *matHeaderCellDef>Fecha</th>
+              <td mat-cell *matCellDef="let v">{{ v.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="clienteNombre">
+              <th mat-header-cell *matHeaderCellDef class="col-grow">Cliente</th>
+              <td mat-cell *matCellDef="let v" class="col-grow">{{ v.clienteNombre || 'Sin cliente' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="barberoNombre">
+              <th mat-header-cell *matHeaderCellDef>Barbero</th>
+              <td mat-cell *matCellDef="let v">{{ v.barberoNombre || 'Sin barbero' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="metodoPago">
+              <th mat-header-cell *matHeaderCellDef>Método de pago</th>
+              <td mat-cell *matCellDef="let v">
+                <span class="payment-chip" [style.color]="colorMetodoPago(v.metodoPago)">
+                  <mat-icon>{{ iconoMetodoPago(v.metodoPago) }}</mat-icon>{{ v.metodoPago }}
+                </span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="total">
+              <th mat-header-cell *matHeaderCellDef class="col-right">Total</th>
+              <td mat-cell *matCellDef="let v" class="col-right"><strong>S/ {{ v.total | number:'1.2-2' }}</strong></td>
+            </ng-container>
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let v"><span class="status-chip" [ngClass]="v.estado.toLowerCase()">{{ v.estado }}</span></td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="ventasColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: ventasColumns;"></tr>
+          </table>
+          <div class="empty-msg" *ngIf="!ventas.length">Sin ventas en este periodo</div>
+          <mat-paginator [pageSize]="10" [pageSizeOptions]="[10,20,50,100]" showFirstLastButtons [hidden]="!ventas.length"></mat-paginator>
+        </div>
+
+        <div class="card payment-method-card">
+          <h3 class="card-title-rpt"><mat-icon>payment</mat-icon> Ingresos por método de pago</h3>
+          <div *ngFor="let m of ingresosPorMetodoPago" class="payment-method-row">
+            <div class="payment-method-head">
+              <span class="payment-chip" [style.color]="colorMetodoPago(m.metodoPago)">
+                <mat-icon>{{ iconoMetodoPago(m.metodoPago) }}</mat-icon>{{ m.metodoPago }}
+              </span>
+              <strong class="num">S/ {{ m.total | number:'1.2-2' }}</strong>
+            </div>
+            <div class="payment-method-bar">
+              <div class="payment-method-fill" [style.width.%]="m.porcentaje" [style.background]="colorMetodoPago(m.metodoPago)"></div>
+            </div>
+            <div class="text-muted text-sm payment-method-foot">
+              <span>{{ m.cantidad }} transacción(es)</span>
+              <span>{{ m.porcentaje | number:'1.2-2' }}%</span>
+            </div>
+          </div>
+          <div class="empty-msg" *ngIf="!ingresosPorMetodoPago.length">Sin datos</div>
+        </div>
       </div>
 
       <div class="reports-grid">

@@ -164,10 +164,10 @@
           <mat-label>Sellos otorgados por cada servicio</mat-label>
           <input matInput type="number" formControlName="sellosPorGanancia" min="1">
         </mat-form-field>
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Descripción de la recompensa</mat-label>
-          <input matInput formControlName="descripcionRecompensa" placeholder="Ej: Corte gratis">
-        </mat-form-field>
+        <p class="text-muted text-sm mb-16">
+          Los premios ya no son una recompensa fija. Puedes crear y modificar varios desde
+          <a routerLink="/loyalty">Fidelización → Administrar premios</a>.
+        </p>
         <mat-slide-toggle formControlName="activo" class="mb-16">Programa de fidelización activo</mat-slide-toggle>
         <div class="form-actions">
           <button mat-flat-button color="accent" type="submit">Actualizar</button>

@@ -75,6 +75,12 @@ export class ConfirmarVentaDialogComponent implements OnInit {
   // veces) su sello de fidelizacion -- ver LoyaltyService.previewParaVenta.
   loyaltyPreview: LoyaltyPreview | null = null;
 
+  // Modal de entrega de premio cuando se completa un sello
+  mostrarModalPremio = false;
+  premios: any[] = [];
+  premioSeleccionadoId: number | null = null;
+  entregandoPremio = false;
+
   // Agregar/quitar productos o servicios sin salir de este dialogo (antes
   // habia que cancelar e ir a "Editar" la venta, aparte). Cada cambio se
   // sincroniza al toque contra el backend (ver sincronizarItems) para que
@@ -200,7 +206,24 @@ export class ConfirmarVentaDialogComponent implements OnInit {
     if (!this.selectedCustomer) return;
     const items = this.sale.items.map(i => ({ tipo: i.tipo, itemId: i.itemId, cantidad: i.cantidad }));
     this.loyaltyService.previewParaVenta(this.selectedCustomer.id, items).subscribe({
-      next: p => (this.loyaltyPreview = p),
+      next: p => {
+        this.loyaltyPreview = p;
+        if (p.completaRecompensa) {
+          this.cargarPremios();
+        }
+      },
+      error: () => {},
+    });
+  }
+
+  private cargarPremios(): void {
+    this.loyaltyService.getAllRewards().subscribe({
+      next: premios => {
+        this.premios = premios;
+        if (premios.length > 0) {
+          this.premioSeleccionadoId = premios[0].id;
+        }
+      },
       error: () => {},
     });
   }
@@ -407,6 +430,61 @@ export class ConfirmarVentaDialogComponent implements OnInit {
   }
 
   confirmar(): void {
+    if (!this.puedeConfirmar) return;
+
+    // Si el cliente completa un sello, mostrar modal para elegir premio
+    if (this.loyaltyPreview?.completaRecompensa && !this.mostrarModalPremio) {
+      // Si no hay premios cargados, cargar ahora
+      if (!this.premios || this.premios.length === 0) {
+        this.cargarPremios();
+      }
+      this.mostrarModalPremio = true;
+      return;
+    }
+
+    // Si el modal está abierto y seleccionó un premio, guardar selección y cobrar
+    if (this.mostrarModalPremio && this.premioSeleccionadoId) {
+      if (this.selectedCustomer) {
+        this.entregandoPremio = true;
+        this.loyaltyService.selectReward(this.selectedCustomer.id, this.premioSeleccionadoId).subscribe({
+          next: () => {
+            this.mostrarModalPremio = false;
+            this.entregandoPremio = false;
+            this.cobrarVenta();
+          },
+          error: (err: Error) => {
+            this.entregandoPremio = false;
+            this.snackBar.open(err.message, 'Cerrar', { duration: 4000 });
+          },
+        });
+      }
+      return;
+    }
+
+    // En cualquier otro caso, cobrar normalmente
+    this.cobrarVenta();
+  }
+
+  entregarPremio(): void {
+    if (!this.selectedCustomer || !this.premioSeleccionadoId) return;
+    this.entregandoPremio = true;
+    this.loyaltyService.deliverReward(this.selectedCustomer.id, {
+      recompensaId: this.premioSeleccionadoId,
+      motivo: 'Entregado al momento',
+    }).subscribe({
+      next: () => {
+        this.mostrarModalPremio = false;
+        this.entregandoPremio = false;
+        this.cobrarVenta();
+      },
+      error: (err: Error) => {
+        this.entregandoPremio = false;
+        this.snackBar.open(err.message, 'Cerrar', { duration: 4000 });
+      },
+    });
+  }
+
+  private cobrarVenta(): void {
     if (!this.puedeConfirmar) return;
     const pagos: SalePago[] = this.splitMode
       ? this.payments.map(p => ({ metodoPago: p.metodo, monto: p.monto }))

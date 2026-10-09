@@ -85,7 +85,7 @@
       <ng-container matColumnDef="recompensas">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>Recomp.</th>
         <td mat-cell *matCellDef="let c">
-          <span class="status-chip accent" *ngIf="c.recompensasDisponibles > 0" [matTooltip]="'Premio: ' + (c.descripcionRecompensa || descripcionRecompensa)">
+          <span class="status-chip accent" *ngIf="c.recompensasDisponibles > 0" matTooltip="Premio pendiente de elegir por el administrador">
             {{ c.recompensasDisponibles }} 🎁
           </span>
           <span class="text-muted" *ngIf="c.recompensasDisponibles === 0">—</span>

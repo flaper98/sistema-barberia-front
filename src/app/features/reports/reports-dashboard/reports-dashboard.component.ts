@@ -8,6 +8,7 @@ import { Product } from '../../../core/models/product.model';
 import { Worker } from '../../../core/models/worker.model';
 import {
   CitaReporte,
+  IngresosPorMetodoPagoReporte,
   LoyaltyReporte,
   TopProductoReporte,
   TopServicioReporte,
@@ -54,6 +55,7 @@ export class ReportsDashboardComponent implements OnInit, AfterViewInit {
   financeSummary: FinanceSummary | null = null;
   financeEntries: FinanceEntry[] = [];
   loyaltySummary: LoyaltyReporte | null = null;
+  ingresosPorMetodoPago: IngresosPorMetodoPagoReporte[] = [];
 
   constructor(
     private reportService: ReportService,
@@ -127,10 +129,11 @@ export class ReportsDashboardComponent implements OnInit, AfterViewInit {
       topServicios: this.reportService.getTopServices(desde, hasta, 10, this.barberoId),
       topProductos: this.reportService.getTopProducts(desde, hasta, 10, this.barberoId),
       citas: this.reportService.getAppointments(desde, hasta, undefined, this.barberoId),
+      ingresosPorMetodoPago: this.reportService.getIngresosPorMetodoPago(desde, hasta),
       financeSummary: financeSummary$,
       financeEntries: financeEntries$,
     }).subscribe({
-      next: ({ ventas, ventasPorBarbero, topServicios, topProductos, citas, financeSummary, financeEntries }) => {
+      next: ({ ventas, ventasPorBarbero, topServicios, topProductos, citas, ingresosPorMetodoPago, financeSummary, financeEntries }) => {
         this.ventas = ventas;
         this.ventasDataSource.data = ventas;
         if (this.ventasDataSource.paginator) this.ventasDataSource.paginator.firstPage();
@@ -138,6 +141,7 @@ export class ReportsDashboardComponent implements OnInit, AfterViewInit {
         this.topServicios = topServicios;
         this.topProductos = topProductos;
         this.citas = citas;
+        this.ingresosPorMetodoPago = ingresosPorMetodoPago;
         this.widgetPages = { ventasPorBarbero: 0, topServicios: 0, topProductos: 0, lowStock: this.widgetPages.lowStock };
         this.financeSummary = financeSummary;
         this.financeEntries = financeEntries;
@@ -158,8 +162,28 @@ export class ReportsDashboardComponent implements OnInit, AfterViewInit {
 
   get totalVentas(): number { return this.ventas.length; }
   get totalIngresos(): number { return this.ventas.reduce((a, v) => a + v.total, 0); }
+  get ticketPromedio(): number { return this.totalVentas > 0 ? this.totalIngresos / this.totalVentas : 0; }
   get citasAtendidas(): number { return this.citas.filter(c => c.estado === 'ATENDIDA').length; }
   get citasCanceladas(): number { return this.citas.filter(c => c.estado === 'CANCELADA' || c.estado === 'NO_ASISTIO').length; }
+
+  // Identidad visual por método de pago -- se reusa en la tabla de ventas y
+  // en el widget "Ingresos por método de pago" para que el ojo los relacione
+  // de un vistazo sin tener que leer el texto.
+  private readonly metodoPagoMeta: Record<string, { icon: string; color: string }> = {
+    EFECTIVO:      { icon: 'payments',       color: '#4CAF50' },
+    TARJETA:       { icon: 'credit_card',    color: '#FFC400' },
+    YAPE:          { icon: 'phone_android',  color: '#7B1FA2' },
+    PLIN:          { icon: 'phone_iphone',   color: '#0288D1' },
+    TRANSFERENCIA: { icon: 'account_balance', color: '#757575' },
+  };
+
+  iconoMetodoPago(metodo: string): string {
+    return this.metodoPagoMeta[metodo]?.icon ?? 'payments';
+  }
+
+  colorMetodoPago(metodo: string): string {
+    return this.metodoPagoMeta[metodo]?.color ?? 'var(--color-text-muted)';
+  }
 
   // ─── Paginación (5 por página) de los widgets de reportes ─────────────────────
   get pagedVentasPorBarbero(): VentaPorBarbero[] { return this.paginarWidget(this.ventasPorBarbero, 'ventasPorBarbero'); }
@@ -191,7 +215,7 @@ export class ReportsDashboardComponent implements OnInit, AfterViewInit {
 
     if (this.activeTab === 0) {
       this.descargarCsv(`ventas_${rango}.csv`,
-        ['ID', 'Fecha', 'Cliente', 'Barbero', 'Subtotal', 'Descuento', 'Total', 'Método de pago', 'Estado', 'Items'],
+        ['ID', 'Fecha', 'Cliente', 'Barbero', 'Subtotal', 'Descuento', 'Total', 'Metodo de pago', 'Estado', 'Items'],
         this.ventas.map(v => [v.id, v.fecha, v.clienteNombre ?? '', v.barberoNombre ?? '', v.subtotal, v.descuento, v.total, v.metodoPago, v.estado, v.itemsCount]));
     } else if (this.activeTab === 1) {
       this.descargarCsv(`citas_${rango}.csv`,
@@ -215,8 +239,13 @@ export class ReportsDashboardComponent implements OnInit, AfterViewInit {
   }
 
   private descargarCsv(filename: string, headers: string[], rows: (string | number | null)[][]): void {
-    const csv = [headers, ...rows]
-      .map(row => row.map(cell => this.escaparCeldaCsv(cell)).join(','))
+    // Excel en configuración regional español (Perú incluido) usa coma como
+    // separador decimal, así que espera ";" como separador de columnas en un
+    // CSV -- con "," (el estándar internacional) mete todo en una sola
+    // columna. La directiva "sep=;" en la primera línea fuerza ese
+    // separador sin depender de la configuración regional de quien lo abre.
+    const csv = 'sep=;\r\n' + [headers, ...rows]
+      .map(row => row.map(cell => this.escaparCeldaCsv(cell)).join(';'))
       .join('\r\n');
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -229,6 +258,6 @@ export class ReportsDashboardComponent implements OnInit, AfterViewInit {
 
   private escaparCeldaCsv(value: string | number | null): string {
     const str = String(value ?? '');
-    return /[",\r\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+    return /[";\r\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
   }
 }

@@ -21,6 +21,17 @@
 }
 
 // ─── Métricas (KPI) ───────────────────────────────────────────────────────────
+// Reusa el mismo patrón .stat-card/.stat-icon del dashboard principal (ver
+// styles.scss) para que los KPIs de Reportes se vean consistentes con el
+// resto del sistema en vez de tener su propio estilo plano aparte.
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+// El tab Citas todavía usa .metric-strip/.metric (métricas simples, sin
+// icono) -- se mantiene solo para ese caso.
 .metric-strip {
   display: flex; flex-wrap: wrap; background: var(--color-surface);
   border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden;
@@ -43,6 +54,64 @@
 
 @media (max-width: 640px) {
   .metric { border-right: none; border-bottom: 1px solid var(--color-border); &:last-child { border-bottom: none; } }
+}
+
+// ─── Alerta de stock bajo (banner) ─────────────────────────────────────────────
+// Antes vivía mezclada como una card más del grid de rankings, con el mismo
+// peso visual que "Servicios más vendidos" -- es una alerta operativa, no un
+// ranking de ventas, así que se separa como banner para que se note primero.
+.stock-alert-banner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  background: rgba(244,67,54,.08);
+  border: 1px solid rgba(244,67,54,.25);
+  border-radius: var(--radius-md);
+  color: var(--color-warn);
+  font-size: .875rem;
+  mat-icon { font-size: 20px; width: 20px; height: 20px; flex-shrink: 0; }
+  strong { font-variant-numeric: tabular-nums; }
+}
+
+// ─── Layout principal: tabla de ventas + métodos de pago ───────────────────────
+.ventas-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 20px;
+  align-items: start;
+  @media (max-width: 900px) { grid-template-columns: 1fr; }
+}
+
+.col-right { text-align: right; }
+
+.payment-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .8rem; font-weight: 600;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+// ─── Widget "Ingresos por método de pago" ──────────────────────────────────────
+.payment-method-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+  &:last-child { border-bottom: none; }
+}
+
+.payment-method-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-bottom: 6px;
+  .num { font-variant-numeric: tabular-nums; }
+}
+
+.payment-method-bar {
+  height: 6px; border-radius: 3px; background: var(--color-bg); overflow: hidden;
+}
+
+.payment-method-fill {
+  height: 100%; border-radius: 3px; transition: width .3s ease;
+}
+
+.payment-method-foot {
+  display: flex; justify-content: space-between; margin-top: 4px;
 }
 
 // ─── Reports grid ─────────────────────────────────────────────────────────────

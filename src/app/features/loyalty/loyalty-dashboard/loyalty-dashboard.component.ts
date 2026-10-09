@@ -3,7 +3,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { PageEvent } from '@angular/material/paginator';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { LoyaltyAccount, ReglaFidelizacion } from '../../../core/models/loyalty.model';
+import { LoyaltyAccount, ReglaFidelizacion, Reward } from '../../../core/models/loyalty.model';
 import { LoyaltyService } from '../../../data/repositories/loyalty.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { PermissionService } from '../../../core/auth/permission.service';
@@ -23,7 +23,14 @@ export class LoyaltyDashboardComponent implements OnInit {
   search = '';
   loading = true;
   activeTab = 0;
-  descripcionRecompensa = '';
+  premios: Reward[] = [];
+  todosLosPremios: Reward[] = [];
+  premioSeleccionado: Record<number, number | null> = {};
+  nuevoPremio = '';
+  editandoPremioId: number | null = null;
+  descripcionPremioEditada = '';
+  loadingPremios = false;
+  sellosNecesarios = 6;
 
   // Pestaña "Qué aplica sello" -- que servicios/productos/paquetes suman
   // sello (ver ComisionController/commissions-dashboard, mismo patron para
@@ -56,6 +63,22 @@ export class LoyaltyDashboardComponent implements OnInit {
     return this.authService.hasRole(['ADMIN']) || this.permissionService.canEdit('FIDELIZACION');
   }
 
+  get esAdmin(): boolean {
+    return this.authService.hasRole(['ADMIN']);
+  }
+
+  get mostrandoClientes(): boolean {
+    return this.activeTab === 0 || this.activeTab === 1;
+  }
+
+  get indicePremios(): number {
+    return 2;
+  }
+
+  get indiceReglas(): number {
+    return this.esAdmin ? 3 : 2;
+  }
+
   // La pestaña "Qué aplica sello" configura el catálogo, no la cuenta de
   // un cliente puntual -- igual criterio que "Tasas de comisión", que
   // tampoco se la muestra al barbero (ver commissions-dashboard).
@@ -65,9 +88,10 @@ export class LoyaltyDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.loyaltyService.getConfig().subscribe({
-      next: cfg => (this.descripcionRecompensa = cfg.descripcionRecompensa || 'Recompensa'),
+      next: config => this.sellosNecesarios = config.sellosNecesarios,
       error: () => {},
     });
+    this.cargarPremiosActivos();
     this.load();
   }
 
@@ -86,6 +110,11 @@ export class LoyaltyDashboardComponent implements OnInit {
         this.accounts = this.activeTab === 1 && this.search.trim()
           ? pageResp.content.filter(a => matchesSearch(this.search, a.clienteNombre))
           : pageResp.content;
+        this.accounts.forEach(a => {
+          if (this.premioSeleccionado[a.clienteId] === undefined) {
+            this.premioSeleccionado[a.clienteId] = this.resolverPremioInicial(a);
+          }
+        });
         this.totalElements = pageResp.totalElements;
         this.loading = false;
       },
@@ -106,7 +135,12 @@ export class LoyaltyDashboardComponent implements OnInit {
   getStampArray(acc: LoyaltyAccount): number[] { return Array.from({ length: acc.sellosNecesarios }, (_, i) => i); }
 
   redeem(account: LoyaltyAccount): void {
-    this.loyaltyService.redeemReward(account.clienteId).subscribe({
+    const recompensaId = this.premioSeleccionado[account.clienteId];
+    if (!recompensaId) {
+      this.snackBar.open('Selecciona el premio que recibirá el cliente', 'Cerrar', { duration: 3000 });
+      return;
+    }
+    this.loyaltyService.redeemReward(account.clienteId, recompensaId).subscribe({
       next: (updated) => {
         const idx = this.accounts.findIndex(a => a.clienteId === account.clienteId);
         if (idx > -1) {
@@ -117,7 +151,8 @@ export class LoyaltyDashboardComponent implements OnInit {
             recompensasDisponibles: updated.recompensasDisponibles,
           };
         }
-        this.snackBar.open('Recompensa canjeada', '', { duration: 2500 });
+        const premio = this.premios.find(p => p.id === recompensaId);
+        this.snackBar.open(`Premio canjeado: ${premio?.descripcion ?? ''}`, '', { duration: 2500 });
       },
       error: (err: Error) => this.snackBar.open(err.message, 'Cerrar', { duration: 3000 }),
     });
@@ -162,12 +197,113 @@ export class LoyaltyDashboardComponent implements OnInit {
 
   onTabChange(idx: number): void {
     this.activeTab = idx;
-    if (idx === 2) {
+    if (this.esAdmin && idx === this.indicePremios) {
+      this.cargarTodosLosPremios();
+      return;
+    }
+    if (!this.esBarbero && idx === this.indiceReglas) {
       if (!this.reglasCargadas) this.cargarReglas();
       return;
     }
     this.pageIndex = 0;
     this.load();
+  }
+
+  private cargarPremiosActivos(): void {
+    this.loyaltyService.getRewards().subscribe({
+      next: premios => {
+        this.premios = premios;
+        this.accounts.forEach(a => {
+          const seleccionado = this.premioSeleccionado[a.clienteId];
+          if (seleccionado == null || !premios.some(p => p.id === seleccionado)) {
+            this.premioSeleccionado[a.clienteId] = this.resolverPremioInicial(a);
+          }
+        });
+      },
+      error: (err: Error) => this.snackBar.open(err.message, 'Cerrar', { duration: 4000 }),
+    });
+  }
+
+  // Si el cliente ya eligió un premio (durante la venta, o antes desde acá
+  // mismo), la descripción queda guardada en la cuenta -- se usa para
+  // preseleccionar el mismo premio en el dropdown en vez de defaultear
+  // siempre al primero del catálogo.
+  private resolverPremioInicial(account: LoyaltyAccount): number | null {
+    if (account.descripcionRecompensa) {
+      const match = this.premios.find(p => p.descripcion === account.descripcionRecompensa);
+      if (match) return match.id;
+    }
+    return this.premios[0]?.id ?? null;
+  }
+
+  // Premio que le toca al cliente, en solo lectura (para quien no es ADMIN):
+  // el que ya quedó elegido en la cuenta o, si no hay, el que el admin vería
+  // preseleccionado en el dropdown.
+  nombrePremio(account: LoyaltyAccount): string | null {
+    if (account.descripcionRecompensa) return account.descripcionRecompensa;
+    const id = this.premioSeleccionado[account.clienteId];
+    return this.premios.find(p => p.id === id)?.descripcion ?? null;
+  }
+
+  cargarTodosLosPremios(): void {
+    this.loadingPremios = true;
+    this.loyaltyService.getAllRewards().subscribe({
+      next: premios => { this.todosLosPremios = premios; this.loadingPremios = false; },
+      error: (err: Error) => { this.loadingPremios = false; this.snackBar.open(err.message, 'Cerrar', { duration: 4000 }); },
+    });
+  }
+
+  crearPremio(): void {
+    const descripcion = this.nuevoPremio.trim();
+    if (!descripcion) return;
+    this.loyaltyService.createReward(descripcion).subscribe({
+      next: premio => {
+        this.todosLosPremios = [...this.todosLosPremios, premio]
+          .sort((a, b) => a.descripcion.localeCompare(b.descripcion));
+        this.nuevoPremio = '';
+        this.cargarPremiosActivos();
+        this.snackBar.open('Premio creado', '', { duration: 2000 });
+      },
+      error: (err: Error) => this.snackBar.open(err.message, 'Cerrar', { duration: 4000 }),
+    });
+  }
+
+  editarPremio(premio: Reward): void {
+    this.editandoPremioId = premio.id;
+    this.descripcionPremioEditada = premio.descripcion;
+  }
+
+  cancelarEdicionPremio(): void {
+    this.editandoPremioId = null;
+    this.descripcionPremioEditada = '';
+  }
+
+  guardarPremio(premio: Reward, activo = premio.activo): void {
+    const descripcion = (this.editandoPremioId === premio.id
+      ? this.descripcionPremioEditada : premio.descripcion).trim();
+    if (!descripcion) return;
+    this.loyaltyService.updateReward({ ...premio, descripcion, activo }).subscribe({
+      next: actualizado => {
+        const idx = this.todosLosPremios.findIndex(p => p.id === actualizado.id);
+        if (idx >= 0) this.todosLosPremios[idx] = actualizado;
+        this.cancelarEdicionPremio();
+        this.cargarPremiosActivos();
+        this.snackBar.open('Premio actualizado', '', { duration: 2000 });
+      },
+      error: (err: Error) => this.snackBar.open(err.message, 'Cerrar', { duration: 4000 }),
+    });
+  }
+
+  desactivarPremio(premio: Reward): void {
+    if (!confirm(`¿Desactivar el premio "${premio.descripcion}"?`)) return;
+    this.loyaltyService.deactivateReward(premio.id).subscribe({
+      next: () => {
+        premio.activo = false;
+        this.cargarPremiosActivos();
+        this.snackBar.open('Premio desactivado', '', { duration: 2000 });
+      },
+      error: (err: Error) => this.snackBar.open(err.message, 'Cerrar', { duration: 4000 }),
+    });
   }
 
   private cargarReglas(): void {

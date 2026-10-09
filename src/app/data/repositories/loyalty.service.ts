@@ -87,10 +87,22 @@ export class LoyaltyService {
       .pipe(map(r => r.data!));
   }
 
-  redeemReward(clienteId: number, motivo = 'Canje de recompensa'): Observable<SelloResponse> {
+  redeemReward(clienteId: number, recompensaId: number, motivo = 'Canje de premio'): Observable<SelloResponse> {
     return this.http
-      .post<ApiResponse<SelloResponse>>(`${this.url}/customers/${clienteId}/redeem`, { motivo })
+      .post<ApiResponse<SelloResponse>>(`${this.url}/customers/${clienteId}/redeem`, { recompensaId, motivo })
       .pipe(map(r => r.data!));
+  }
+
+  deliverReward(clienteId: number, request: { recompensaId: number; motivo?: string }): Observable<SelloResponse> {
+    return this.http
+      .post<ApiResponse<SelloResponse>>(`${this.url}/customers/${clienteId}/deliver-reward`, request)
+      .pipe(map(r => r.data!));
+  }
+
+  selectReward(clienteId: number, recompensaId: number): Observable<void> {
+    return this.http
+      .post<ApiResponse<void>>(`${this.url}/customers/${clienteId}/select-reward`, { recompensaId })
+      .pipe(map(r => r.data));
   }
 
   updateRewardDescription(clienteId: number, descripcion: string): Observable<LoyaltyAccount> {
@@ -115,6 +127,33 @@ export class LoyaltyService {
     return this.http
       .get<ApiResponse<Reward[]>>(`${this.url}/rewards`)
       .pipe(map(r => r.data ?? []));
+  }
+
+  getAllRewards(): Observable<Reward[]> {
+    return this.http
+      .get<ApiResponse<Reward[]>>(`${this.url}/rewards/admin`)
+      .pipe(map(r => r.data ?? []));
+  }
+
+  createReward(descripcion: string): Observable<Reward> {
+    return this.http
+      .post<ApiResponse<Reward>>(`${this.url}/rewards`, { descripcion, activo: true })
+      .pipe(map(r => r.data!));
+  }
+
+  updateReward(reward: Reward): Observable<Reward> {
+    return this.http
+      .put<ApiResponse<Reward>>(`${this.url}/rewards/${reward.id}`, {
+        descripcion: reward.descripcion,
+        activo: reward.activo,
+      })
+      .pipe(map(r => r.data!));
+  }
+
+  deactivateReward(id: number): Observable<void> {
+    return this.http
+      .delete<ApiResponse<void>>(`${this.url}/rewards/${id}`)
+      .pipe(map(() => void 0));
   }
 
   // Reglas de fidelizacion por item del catalogo -- no por cliente.

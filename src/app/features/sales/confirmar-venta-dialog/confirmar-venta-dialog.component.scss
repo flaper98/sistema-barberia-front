@@ -114,3 +114,44 @@
   &.mismatch { background: rgba(211,47,47,.08); }
   .warn-color { color: var(--color-warn); font-weight: 600; }
 }
+
+.reward-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+}
+
+.reward-modal {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.16);
+  max-width: 380px; width: 90%;
+  overflow: hidden;
+}
+
+.reward-modal-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: rgba(76, 175, 80, 0.08);
+
+  h3 { margin: 0; font-size: 1.1rem; color: var(--color-text); font-weight: 600; }
+}
+
+.reward-modal-body {
+  padding: 20px;
+
+  p { margin: 0 0 8px; font-size: 0.95rem; color: var(--color-text); }
+  p:first-child { font-weight: 500; }
+
+  mat-form-field { margin-top: 16px; }
+}
+
+.reward-modal-actions {
+  display: flex; gap: 10px; justify-content: flex-end;
+  padding: 16px 20px;
+  border-top: 1px solid var(--color-border);
+
+  button { display: flex; align-items: center; gap: 6px; }
+}

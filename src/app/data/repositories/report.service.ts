@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
   CitaReporte,
+  IngresosPorMetodoPagoReporte,
   LoyaltyReporte,
   TopProductoReporte,
   TopServicioReporte,
@@ -76,5 +77,12 @@ export class ReportService {
     return this.http
       .get<ApiResponse<LoyaltyReporte>>(`${this.url}/loyalty`)
       .pipe(map(r => r.data!));
+  }
+
+  getIngresosPorMetodoPago(desde: string, hasta: string): Observable<IngresosPorMetodoPagoReporte[]> {
+    const params = this.buildParams(desde, hasta);
+    return this.http
+      .get<ApiResponse<IngresosPorMetodoPagoReporte[]>>(`${this.url}/income-by-payment-method`, { params })
+      .pipe(map(r => r.data ?? []));
   }
 }

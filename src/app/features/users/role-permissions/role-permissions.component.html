@@ -12,41 +12,41 @@
   <div *ngIf="loading" class="text-center mt-24"><mat-spinner diameter="48" style="margin:auto"></mat-spinner></div>
 
   <div class="card" *ngIf="!loading">
-    <div class="table-scroll" style="overflow-x:auto;">
-      <table class="permisos-table" style="width:100%; border-collapse:collapse;">
+    <div class="table-scroll">
+      <table class="permisos-table">
         <thead>
           <tr>
-            <th style="text-align:left; padding:8px 12px;">Sección</th>
-            <th *ngFor="let rol of roles" colspan="3" style="text-align:center; padding:8px 12px; border-left:1px solid var(--divider-color, #444);">
+            <th>Sección</th>
+            <th *ngFor="let rol of roles" colspan="3" class="rol-group">
               {{ rol.label }}
             </th>
           </tr>
           <tr>
             <th></th>
             <ng-container *ngFor="let rol of roles">
-              <th style="text-align:center; padding:4px 8px; border-left:1px solid var(--divider-color, #444); font-weight:400;">Ver</th>
-              <th style="text-align:center; padding:4px 8px; font-weight:400;">Editar</th>
-              <th style="text-align:center; padding:4px 8px; font-weight:400;">Eliminar</th>
+              <th class="rol-group">Ver</th>
+              <th>Editar</th>
+              <th>Eliminar</th>
             </ng-container>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let fila of filas">
-            <td style="padding:8px 12px; white-space:nowrap;">{{ fila.label }}</td>
+            <td>{{ fila.label }}</td>
             <ng-container *ngFor="let rol of roles">
-              <td style="text-align:center; padding:4px 8px; border-left:1px solid var(--divider-color, #444);">
+              <td class="rol-group">
                 <mat-checkbox
                   [checked]="fila.porRol[rol.value].puedeVer"
                   (change)="onVerChange(fila, rol.value, $event.checked)">
                 </mat-checkbox>
               </td>
-              <td style="text-align:center; padding:4px 8px;">
+              <td>
                 <mat-checkbox
                   [checked]="fila.porRol[rol.value].puedeEditar"
                   (change)="onEditarChange(fila, rol.value, $event.checked)">
                 </mat-checkbox>
               </td>
-              <td style="text-align:center; padding:4px 8px;">
+              <td>
                 <mat-checkbox
                   [checked]="fila.porRol[rol.value].puedeEliminar"
                   (change)="onEliminarChange(fila, rol.value, $event.checked)">
@@ -58,23 +58,23 @@
       </table>
     </div>
 
-    <div *ngIf="filaComisiones" style="margin-top:24px; padding:16px; border:1px solid var(--divider-color, #444); border-radius:8px;">
-      <h3 style="margin:0 0 8px; font-size:1rem; font-weight:600;">Comisiones: ver detalle por ítem</h3>
-      <p class="text-muted text-sm" style="margin:0 0 16px;">
+    <div class="commissions-detail-card" *ngIf="filaComisiones">
+      <h3>Comisiones: ver detalle por ítem</h3>
+      <p class="text-muted text-sm">
         Permite ver el desglose de ventas de un barbero por cada servicio, producto o paquete,
         con fecha y comisión — información más sensible que el resumen general. El Administrador
         siempre puede verlo; un barbero siempre puede ver el propio. Esto define si Cajero/Recepción
         también pueden verlo de <strong>cualquier</strong> barbero.
       </p>
-      <div style="display:flex; gap:24px; flex-wrap:wrap;">
-        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+      <div class="commissions-detail-options">
+        <label>
           <mat-checkbox
             [checked]="filaComisiones.porRol['CASHIER'].puedeVerDetalle"
             (change)="onVerDetalleChange('CASHIER', $event.checked)">
           </mat-checkbox>
           Cajero
         </label>
-        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+        <label>
           <mat-checkbox
             [checked]="filaComisiones.porRol['RECEPTION'].puedeVerDetalle"
             (change)="onVerDetalleChange('RECEPTION', $event.checked)">
@@ -84,7 +84,7 @@
       </div>
     </div>
 
-    <div class="form-actions" style="margin-top:24px;">
+    <div class="form-actions">
       <button mat-flat-button color="primary" [disabled]="saving" (click)="guardar()">
         <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
         <span *ngIf="!saving">Guardar cambios</span>

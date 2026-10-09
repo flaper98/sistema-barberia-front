@@ -176,6 +176,36 @@
         <span *ngIf="paymentsMismatch" class="warn-color">{{ paymentsDiffLabel }}</span>
       </div>
     </ng-container>
+
+    <!-- Modal de selección de premio cuando se completa un sello -->
+    <div class="reward-modal-overlay" *ngIf="mostrarModalPremio && loyaltyPreview?.completaRecompensa">
+      <div class="reward-modal">
+        <div class="reward-modal-header">
+          <mat-icon style="color: var(--color-success); font-size: 32px; width: 32px; height: 32px;">celebration</mat-icon>
+          <h3>¡Sello completado!</h3>
+        </div>
+        <div class="reward-modal-body">
+          <p>{{ selectedCustomer?.nombre }} completó su sello y tiene una recompensa disponible.</p>
+          <p class="text-muted text-sm">¿Cuál premio deseas recibir?</p>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Elige un premio</mat-label>
+            <mat-select [(ngModel)]="premioSeleccionadoId">
+              <mat-option *ngFor="let p of premios" [value]="p.id">
+                {{ p.descripcion }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="reward-modal-actions">
+          <button mat-stroked-button (click)="mostrarModalPremio = false">
+            Cancelar
+          </button>
+          <button mat-flat-button color="primary" (click)="confirmar()" [disabled]="!premioSeleccionadoId">
+            <span>Aceptar y cobrar</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </ng-container>
 </mat-dialog-content>
 

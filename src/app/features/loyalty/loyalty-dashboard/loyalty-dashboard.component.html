@@ -6,10 +6,11 @@
   <mat-tab-group (selectedIndexChange)="onTabChange($event)" class="mb-24">
     <mat-tab label="Todos los clientes"></mat-tab>
     <mat-tab label="Con recompensas disponibles"></mat-tab>
+    <mat-tab label="Administrar premios" *ngIf="esAdmin"></mat-tab>
     <mat-tab label="Qué aplica sello" *ngIf="!esBarbero"></mat-tab>
   </mat-tab-group>
 
-  <ng-container *ngIf="activeTab !== 2">
+  <ng-container *ngIf="mostrandoClientes">
     <mat-form-field appearance="outline" class="search-field mb-16">
       <mat-label>Buscar cliente</mat-label>
       <input matInput [(ngModel)]="search" (ngModelChange)="onSearchChange()" placeholder="Nombre, teléfono, código...">
@@ -19,40 +20,60 @@
     <div *ngIf="loading" class="text-center"><mat-spinner diameter="40" style="margin:auto"></mat-spinner></div>
   </ng-container>
 
-  <div class="loyalty-grid" *ngIf="activeTab !== 2 && !loading">
-    <div class="loyalty-card card" *ngFor="let acc of accounts">
+  <div class="loyalty-grid" *ngIf="mostrandoClientes && !loading">
+    <div class="loyalty-card card" [class.has-reward]="acc.recompensasDisponibles > 0" *ngFor="let acc of accounts">
       <div class="lc-header">
         <div class="lc-avatar">{{ acc.clienteNombre[0] }}</div>
-        <div>
+        <div class="lc-identity">
           <div class="lc-name">{{ acc.clienteNombre }}</div>
           <div class="text-muted text-sm">{{ acc.recompensasCanjeadas }} recompensa(s) canjeadas</div>
         </div>
-        <div class="lc-rewards" *ngIf="acc.recompensasDisponibles > 0">
-          <mat-icon>card_giftcard</mat-icon>
-          <span>{{ acc.recompensasDisponibles }}</span>
-        </div>
       </div>
 
-      <div class="stamps-container">
-        <div
-          *ngFor="let s of getStampArray(acc); let i = index"
-          class="stamp-dot"
-          [class.filled]="i < acc.sellosActuales">
-          <mat-icon>{{ i < acc.sellosActuales ? 'local_activity' : 'radio_button_unchecked' }}</mat-icon>
+      <div class="stamps-row">
+        <div class="stamps-container">
+          <div
+            *ngFor="let s of getStampArray(acc); let i = index"
+            class="stamp-dot"
+            [class.filled]="i < acc.sellosActuales">
+            <mat-icon>{{ i < acc.sellosActuales ? 'local_activity' : 'radio_button_unchecked' }}</mat-icon>
+          </div>
         </div>
         <span class="stamps-count">{{ acc.sellosActuales }}/{{ acc.sellosNecesarios }}</span>
       </div>
 
-      <mat-progress-bar
-        mode="determinate"
-        [value]="(acc.sellosActuales / acc.sellosNecesarios) * 100"
-        color="accent"
-        class="mb-8">
-      </mat-progress-bar>
+      <div class="lc-body">
+        <div class="reward-banner" *ngIf="acc.recompensasDisponibles > 0">
+          <div class="reward-banner-head">
+            <mat-icon>card_giftcard</mat-icon>
+            <span>{{ acc.recompensasDisponibles }} recompensa(s) disponible(s)</span>
+          </div>
 
-      <p class="reward-description" *ngIf="acc.recompensasDisponibles > 0">
-        <mat-icon>redeem</mat-icon> Premio: {{ descripcionRecompensa }}
-      </p>
+          <mat-form-field appearance="outline" class="reward-select" *ngIf="esAdmin && premios.length">
+            <mat-label>Premio a entregar</mat-label>
+            <mat-select [(ngModel)]="premioSeleccionado[acc.clienteId]">
+              <mat-option *ngFor="let premio of premios" [value]="premio.id">{{ premio.descripcion }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <!-- Los demás roles no entregan el premio, pero sí tienen que saber
+               cuál le toca al cliente (ej. el barbero al atenderlo). -->
+          <div class="reward-assigned" *ngIf="!esAdmin && nombrePremio(acc) as premio">
+            <span class="reward-assigned-label">Premio</span>
+            <span class="reward-assigned-name">{{ premio }}</span>
+          </div>
+          <p class="reward-warning" *ngIf="esAdmin && !premios.length">
+            <mat-icon>warning</mat-icon> No hay premios activos. El administrador debe crear uno.
+          </p>
+
+          <button mat-flat-button color="accent" class="reward-btn" *ngIf="esAdmin" [disabled]="!premioSeleccionado[acc.clienteId]" (click)="redeem(acc)">
+            <mat-icon>redeem</mat-icon> Entregar premio
+          </button>
+        </div>
+
+        <div class="lc-last-activity text-muted text-sm" *ngIf="acc.recompensasDisponibles === 0">
+          Última actividad: {{ (acc.ultimoMovimiento | date:'dd/MM/yyyy') || '—' }}
+        </div>
+      </div>
 
       <div class="lc-footer" *ngIf="puedeEditar">
         <button mat-stroked-button (click)="addStamp(acc)">
@@ -61,12 +82,6 @@
         <button mat-stroked-button *ngIf="acc.sellosActuales > 0 || acc.recompensasDisponibles > 0" (click)="removeStamp(acc)" matTooltip="Corregir un sello agregado por error">
           <mat-icon>remove_circle_outline</mat-icon> Quitar sello
         </button>
-        <button mat-flat-button color="accent" *ngIf="acc.recompensasDisponibles > 0" (click)="redeem(acc)">
-          <mat-icon>redeem</mat-icon> Canjear {{ descripcionRecompensa }}
-        </button>
-      </div>
-      <div class="lc-footer text-muted text-sm" *ngIf="acc.recompensasDisponibles === 0">
-        Última actividad: {{ (acc.ultimoMovimiento | date:'dd/MM/yyyy') || '—' }}
       </div>
     </div>
 
@@ -78,7 +93,7 @@
   </div>
 
   <mat-paginator
-    *ngIf="activeTab !== 2 && !loading"
+    *ngIf="mostrandoClientes && !loading"
     [length]="totalElements"
     [pageIndex]="pageIndex"
     [pageSize]="pageSize"
@@ -87,7 +102,69 @@
     (page)="onPageChange($event)">
   </mat-paginator>
 
-  <div class="card mt-16" *ngIf="activeTab === 2">
+  <div class="card mt-16" *ngIf="esAdmin && activeTab === indicePremios">
+    <div class="rewards-header">
+      <div>
+        <h3 class="card-title-sm">
+          Catálogo de premios
+          <span class="rewards-count" *ngIf="todosLosPremios.length">{{ todosLosPremios.length }}</span>
+        </h3>
+        <p class="text-muted text-sm">Premios que el administrador puede entregar cuando un cliente completa sus {{ sellosNecesarios }} tickets.</p>
+      </div>
+      <div class="new-reward">
+        <mat-form-field appearance="outline">
+          <mat-label>Nuevo premio</mat-label>
+          <input matInput [(ngModel)]="nuevoPremio" maxlength="255" (keyup.enter)="crearPremio()" placeholder="Ej. Lavado gratis">
+        </mat-form-field>
+        <button mat-flat-button color="primary" [disabled]="!nuevoPremio.trim()" (click)="crearPremio()">
+          <mat-icon>add</mat-icon> Agregar
+        </button>
+      </div>
+    </div>
+
+    <div class="text-center mt-16" *ngIf="loadingPremios"><mat-spinner diameter="32" style="margin:auto"></mat-spinner></div>
+    <table class="cortes-table rewards-table" *ngIf="!loadingPremios && todosLosPremios.length">
+      <thead><tr><th>Premio</th><th>Estado</th><th class="col-right">Acciones</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let premio of todosLosPremios" [class.inactive-row]="!premio.activo">
+          <td>
+            <mat-form-field appearance="outline" class="reward-edit-field" *ngIf="editandoPremioId === premio.id">
+              <input matInput [(ngModel)]="descripcionPremioEditada" maxlength="255" (keyup.enter)="guardarPremio(premio)">
+            </mat-form-field>
+            <div class="reward-name" *ngIf="editandoPremioId !== premio.id">
+              <mat-icon>card_giftcard</mat-icon>
+              <span>{{ premio.descripcion }}</span>
+            </div>
+          </td>
+          <td>
+            <mat-slide-toggle
+              class="reward-status-toggle"
+              [class.active]="premio.activo"
+              [checked]="premio.activo"
+              (change)="guardarPremio(premio, $event.checked)">
+              {{ premio.activo ? 'Activo' : 'Inactivo' }}
+            </mat-slide-toggle>
+          </td>
+          <td class="reward-actions">
+            <ng-container *ngIf="editandoPremioId !== premio.id">
+              <button mat-icon-button (click)="editarPremio(premio)" matTooltip="Editar premio"><mat-icon>edit</mat-icon></button>
+              <button mat-icon-button color="warn" *ngIf="premio.activo" (click)="desactivarPremio(premio)" matTooltip="Desactivar premio"><mat-icon>delete_outline</mat-icon></button>
+            </ng-container>
+            <ng-container *ngIf="editandoPremioId === premio.id">
+              <button mat-icon-button color="primary" [disabled]="!descripcionPremioEditada.trim()" (click)="guardarPremio(premio)" matTooltip="Guardar"><mat-icon>check</mat-icon></button>
+              <button mat-icon-button (click)="cancelarEdicionPremio()" matTooltip="Cancelar"><mat-icon>close</mat-icon></button>
+            </ng-container>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="empty-state" *ngIf="!loadingPremios && !todosLosPremios.length">
+      <mat-icon>card_giftcard</mat-icon>
+      <p>Aún no hay premios. Agrega el primero.</p>
+    </div>
+  </div>
+
+  <div class="card mt-16" *ngIf="!esBarbero && activeTab === indiceReglas">
     <p class="text-muted text-sm mb-16">
       Define qué servicios, productos o paquetes suman sello de fidelización al cliente —
       no depende de quién lo vendió, sino de qué se vendió. Con que la venta tenga al menos
@@ -102,11 +179,11 @@
           <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
         <table class="cortes-table" *ngIf="reglasServiciosFiltradas.length">
-          <thead><tr><th>Servicio</th><th>Precio</th><th>Suma sello</th></tr></thead>
+          <thead><tr><th>Servicio</th><th class="col-right">Precio</th><th>Suma sello</th></tr></thead>
           <tbody>
             <tr *ngFor="let r of reglasServiciosFiltradas">
               <td>{{ r.nombre }}</td>
-              <td>S/ {{ r.precio | number:'1.2-2' }}</td>
+              <td class="col-right">S/ {{ r.precio | number:'1.2-2' }}</td>
               <td>
                 <mat-checkbox [checked]="r.aplicaFidelizacion" (change)="guardarRegla('SERVICIO', r, $event.checked)"></mat-checkbox>
               </td>
@@ -123,11 +200,11 @@
           <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
         <table class="cortes-table" *ngIf="reglasProductosFiltradas.length">
-          <thead><tr><th>Producto</th><th>Precio</th><th>Suma sello</th></tr></thead>
+          <thead><tr><th>Producto</th><th class="col-right">Precio</th><th>Suma sello</th></tr></thead>
           <tbody>
             <tr *ngFor="let r of reglasProductosFiltradas">
               <td>{{ r.nombre }}</td>
-              <td>S/ {{ r.precio | number:'1.2-2' }}</td>
+              <td class="col-right">S/ {{ r.precio | number:'1.2-2' }}</td>
               <td>
                 <mat-checkbox [checked]="r.aplicaFidelizacion" (change)="guardarRegla('PRODUCTO', r, $event.checked)"></mat-checkbox>
               </td>
@@ -144,11 +221,11 @@
           <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
         <table class="cortes-table" *ngIf="reglasPaquetesFiltradas.length">
-          <thead><tr><th>Paquete</th><th>Precio</th><th>Suma sello</th></tr></thead>
+          <thead><tr><th>Paquete</th><th class="col-right">Precio</th><th>Suma sello</th></tr></thead>
           <tbody>
             <tr *ngFor="let r of reglasPaquetesFiltradas">
               <td>{{ r.nombre }}</td>
-              <td>S/ {{ r.precio | number:'1.2-2' }}</td>
+              <td class="col-right">S/ {{ r.precio | number:'1.2-2' }}</td>
               <td>
                 <mat-checkbox [checked]="r.aplicaFidelizacion" (change)="guardarRegla('PAQUETE', r, $event.checked)"></mat-checkbox>
               </td>

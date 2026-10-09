@@ -10,7 +10,7 @@ interface FilaMatriz {
   porRol: Record<RolConfigurable, PermisoFlags>;
 }
 
-@Component({ selector: 'app-role-permissions', standalone: false, templateUrl: './role-permissions.component.html' })
+@Component({ selector: 'app-role-permissions', standalone: false, templateUrl: './role-permissions.component.html', styleUrls: ['./role-permissions.component.scss'] })
 export class RolePermissionsComponent implements OnInit {
   readonly roles = ROLES_CONFIGURABLES;
   filas: FilaMatriz[] = [];

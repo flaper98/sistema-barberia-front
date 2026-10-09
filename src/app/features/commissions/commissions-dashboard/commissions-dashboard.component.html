@@ -35,11 +35,11 @@
               <mat-icon matSuffix>search</mat-icon>
             </mat-form-field>
             <table class="cortes-table" *ngIf="tasasServiciosFiltradas.length">
-              <thead><tr><th>Servicio</th><th>Precio</th><th>% Comisión</th></tr></thead>
+              <thead><tr><th>Servicio</th><th class="col-right">Precio</th><th>% Comisión</th></tr></thead>
               <tbody>
                 <tr *ngFor="let t of tasasServiciosFiltradas">
                   <td>{{ t.nombre }}</td>
-                  <td>S/ {{ t.precio | number:'1.2-2' }}</td>
+                  <td class="col-right">S/ {{ t.precio | number:'1.2-2' }}</td>
                   <td>
                     <mat-form-field appearance="outline" class="rate-input">
                       <input matInput type="number" min="0" max="100" [(ngModel)]="t.porcentajeComision"
@@ -60,11 +60,11 @@
               <mat-icon matSuffix>search</mat-icon>
             </mat-form-field>
             <table class="cortes-table" *ngIf="tasasProductosFiltradas.length">
-              <thead><tr><th>Producto</th><th>Precio</th><th>% Comisión</th></tr></thead>
+              <thead><tr><th>Producto</th><th class="col-right">Precio</th><th>% Comisión</th></tr></thead>
               <tbody>
                 <tr *ngFor="let t of tasasProductosFiltradas">
                   <td>{{ t.nombre }}</td>
-                  <td>S/ {{ t.precio | number:'1.2-2' }}</td>
+                  <td class="col-right">S/ {{ t.precio | number:'1.2-2' }}</td>
                   <td>
                     <mat-form-field appearance="outline" class="rate-input">
                       <input matInput type="number" min="0" max="100" [(ngModel)]="t.porcentajeComision"
@@ -85,11 +85,11 @@
               <mat-icon matSuffix>search</mat-icon>
             </mat-form-field>
             <table class="cortes-table" *ngIf="tasasPaquetesFiltradas.length">
-              <thead><tr><th>Paquete</th><th>Precio</th><th>% Comisión</th></tr></thead>
+              <thead><tr><th>Paquete</th><th class="col-right">Precio</th><th>% Comisión</th></tr></thead>
               <tbody>
                 <tr *ngFor="let t of tasasPaquetesFiltradas">
                   <td>{{ t.nombre }}</td>
-                  <td>S/ {{ t.precio | number:'1.2-2' }}</td>
+                  <td class="col-right">S/ {{ t.precio | number:'1.2-2' }}</td>
                   <td>
                     <mat-form-field appearance="outline" class="rate-input">
                       <input matInput type="number" min="0" max="100" [(ngModel)]="t.porcentajeComision"
@@ -243,11 +243,11 @@
         <thead>
           <tr>
             <th>Periodo</th>
-            <th>Com. servicios</th>
-            <th>Com. productos</th>
-            <th>Propinas</th>
-            <th>Descuentos</th>
-            <th>Total</th>
+            <th class="col-right">Com. servicios</th>
+            <th class="col-right">Com. productos</th>
+            <th class="col-right">Propinas</th>
+            <th class="col-right">Descuentos</th>
+            <th class="col-right">Total</th>
             <th>Estado</th>
             <th *ngIf="puedeEditar"></th>
           </tr>
@@ -255,11 +255,11 @@
         <tbody>
           <tr *ngFor="let c of cortes">
             <td>{{ c.fechaDesde | date:'dd/MM/yy' }} - {{ c.fechaHasta | date:'dd/MM/yy' }}</td>
-            <td>S/ {{ c.comisionServicios | number:'1.2-2' }}</td>
-            <td>S/ {{ c.comisionProductos | number:'1.2-2' }}</td>
-            <td>S/ {{ c.totalPropinas | number:'1.2-2' }}</td>
-            <td>S/ {{ c.totalDescuentos | number:'1.2-2' }}</td>
-            <td><strong>S/ {{ c.totalAPagar | number:'1.2-2' }}</strong></td>
+            <td class="col-right">S/ {{ c.comisionServicios | number:'1.2-2' }}</td>
+            <td class="col-right">S/ {{ c.comisionProductos | number:'1.2-2' }}</td>
+            <td class="col-right">S/ {{ c.totalPropinas | number:'1.2-2' }}</td>
+            <td class="col-right">S/ {{ c.totalDescuentos | number:'1.2-2' }}</td>
+            <td class="col-right"><strong>S/ {{ c.totalAPagar | number:'1.2-2' }}</strong></td>
             <td><span class="status-chip" [ngClass]="c.estado.toLowerCase()">{{ c.estado }}</span></td>
             <td *ngIf="puedeEditar">
               <button mat-stroked-button *ngIf="c.estado === 'PENDIENTE'" (click)="marcarPagado(c)">Marcar pagado</button>

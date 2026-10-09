@@ -19,9 +19,9 @@
         <th mat-header-cell *matHeaderCellDef>Tipo</th>
         <td mat-cell *matCellDef="let m"><span class="status-chip" [ngClass]="getMovClass(m.tipoMovimiento)">{{ m.tipoMovimiento }}</span></td>
       </ng-container>
-      <ng-container matColumnDef="cantidad"><th mat-header-cell *matHeaderCellDef>Cant.</th><td mat-cell *matCellDef="let m">{{ m.cantidad }}</td></ng-container>
-      <ng-container matColumnDef="stockAnterior"><th mat-header-cell *matHeaderCellDef>Anterior</th><td mat-cell *matCellDef="let m">{{ m.stockAnterior }}</td></ng-container>
-      <ng-container matColumnDef="stockNuevo"><th mat-header-cell *matHeaderCellDef>Nuevo</th><td mat-cell *matCellDef="let m"><strong>{{ m.stockNuevo }}</strong></td></ng-container>
+      <ng-container matColumnDef="cantidad"><th mat-header-cell *matHeaderCellDef class="col-right">Cant.</th><td mat-cell *matCellDef="let m" class="col-right">{{ m.cantidad }}</td></ng-container>
+      <ng-container matColumnDef="stockAnterior"><th mat-header-cell *matHeaderCellDef class="col-right">Anterior</th><td mat-cell *matCellDef="let m" class="col-right">{{ m.stockAnterior }}</td></ng-container>
+      <ng-container matColumnDef="stockNuevo"><th mat-header-cell *matHeaderCellDef class="col-right">Nuevo</th><td mat-cell *matCellDef="let m" class="col-right"><strong>{{ m.stockNuevo }}</strong></td></ng-container>
       <ng-container matColumnDef="motivo"><th mat-header-cell *matHeaderCellDef>Motivo</th><td mat-cell *matCellDef="let m">{{ m.motivo }}</td></ng-container>
       <ng-container matColumnDef="usuarioNombre"><th mat-header-cell *matHeaderCellDef>Usuario</th><td mat-cell *matCellDef="let m">{{ m.usuarioNombre }}</td></ng-container>
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>

@@ -103,6 +103,12 @@ export class QuickSaleComponent implements OnInit {
   // veces) su sello de fidelizacion -- ver LoyaltyService.previewParaVenta.
   loyaltyPreview: LoyaltyPreview | null = null;
 
+  // Modal de entrega de premio cuando se completa un sello
+  mostrarModalPremio = false;
+  premios: any[] = [];
+  premioSeleccionadoId: number | null = null;
+  entregandoPremio = false;
+
   readonly paymentMethods: { value: PaymentMethod; label: string; icon: string }[] = [
     { value: 'EFECTIVO',      label: 'Efectivo',      icon: 'payments' },
     { value: 'TARJETA',       label: 'Tarjeta',       icon: 'credit_card' },
@@ -430,23 +436,86 @@ export class QuickSaleComponent implements OnInit {
     if (!this.selectedCustomer || this.esBarbero) return;
     const items = this.cartItems.map(i => ({ tipo: i.tipo, itemId: i.itemId, cantidad: i.cantidad }));
     this.loyaltyService.previewParaVenta(this.selectedCustomer.id, items).subscribe({
-      next: p => (this.loyaltyPreview = p),
+      next: p => {
+        this.loyaltyPreview = p;
+        if (p.completaRecompensa && (!this.premios || this.premios.length === 0)) {
+          this.cargarPremios();
+        }
+      },
+      error: () => {},
+    });
+  }
+
+  private cargarPremios(): void {
+    this.loyaltyService.getAllRewards().subscribe({
+      next: premios => {
+        this.premios = premios;
+        if (premios.length > 0) {
+          this.premioSeleccionadoId = premios[0].id;
+        }
+      },
       error: () => {},
     });
   }
 
   confirmSale(): void {
+    // Si el cliente completa un sello, mostrar modal para elegir premio
+    if (this.loyaltyPreview?.completaRecompensa && !this.mostrarModalPremio) {
+      if (!this.premios || this.premios.length === 0) {
+        this.cargarPremios();
+      }
+      this.mostrarModalPremio = true;
+      return;
+    }
+
+    // Si el modal está abierto y seleccionó un premio, guardar selección y procesar venta
+    if (this.mostrarModalPremio && this.premioSeleccionadoId) {
+      if (this.selectedCustomer) {
+        this.entregandoPremio = true;
+        this.loyaltyService.selectReward(this.selectedCustomer.id, this.premioSeleccionadoId).subscribe({
+          next: () => {
+            this.mostrarModalPremio = false;
+            this.entregandoPremio = false;
+            this.procesarVenta();
+          },
+          error: (err: Error) => {
+            this.entregandoPremio = false;
+            this.snackBar.open(err.message, 'Cerrar', { duration: 4000, panelClass: 'error-snack' });
+          },
+        });
+      }
+      return;
+    }
+
+    // En cualquier otro caso, procesar la venta normalmente
+    this.procesarVenta();
+  }
+
+  entregarPremio(): void {
+    if (!this.selectedCustomer || !this.premioSeleccionadoId) return;
+    this.entregandoPremio = true;
+    this.loyaltyService.deliverReward(this.selectedCustomer.id, {
+      recompensaId: this.premioSeleccionadoId,
+      motivo: 'Entregado al momento',
+    }).subscribe({
+      next: () => {
+        this.mostrarModalPremio = false;
+        this.entregandoPremio = false;
+        this.procesarVenta();
+      },
+      error: (err: Error) => {
+        this.entregandoPremio = false;
+        this.snackBar.open(err.message, 'Cerrar', { duration: 4000, panelClass: 'error-snack' });
+      },
+    });
+  }
+
+  private procesarVenta(): void {
     this.loading = true;
     const pagos: SalePago[] = this.splitMode
       ? this.payments.map(p => ({ metodoPago: p.metodo, monto: p.monto }))
       : [{ metodoPago: this.selectedPayment, monto: this.total }];
     const form = {
-      // El cliente de una cita ya se sabe de antes (cargarDesdeCita lo puso
-      // en selectedCustomer) -- se manda igual. Fuera de eso, el barbero
-      // puede opcionalmente elegir un cliente ya registrado
-      // (selectedBarberoCustomer); si no eligió ninguno, no manda nada --
-      // recepcion lo asigna al aceptar y cobrar. El metodo de pago sigue
-      // sin ser cosa del barbero.
       clienteId: (this.esBarbero && !this.citaId) ? this.selectedBarberoCustomer?.id : this.selectedCustomer?.id,
       barberoId: this.selectedWorker?.id,
       items: this.cartItems.map(({ tipo, itemId, nombre, precio, cantidad, subtotal }) =>

@@ -174,8 +174,40 @@ a { color: var(--color-primary); text-decoration: none; }
     white-space: normal;
   }
 
-  .mat-mdc-header-cell { font-weight: 600; color: var(--color-text); }
-  .mat-mdc-row:hover   { background: rgba(0,0,0,.02); }
+  // Utilidad para columnas numéricas/montos -- alinearlas a la derecha hace
+  // que se puedan comparar de un vistazo (unidades bajo unidades), en vez de
+  // quedar pegadas al texto de la izquierda como el resto de las columnas.
+  .col-right { text-align: right; }
+
+  .mat-mdc-header-row    { background: var(--color-bg); }
+  .mat-mdc-header-cell   { font-weight: 600; font-size: .78rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .03em; }
+  .mat-mdc-row:hover     { background: rgba(0,0,0,.035); }
+  .mat-mdc-row:last-child .mat-mdc-cell { border-bottom: none; }
+}
+
+// Tabla HTML nativa (sin mat-table) usada en varias pantallas de
+// administración (Fidelización, Comisiones) para listas simples con
+// checkbox/toggle -- antes cada componente duplicaba este mismo bloque de
+// estilos por separado; se centraliza acá para que una mejora se refleje en
+// todas a la vez, con el mismo criterio visual que .mat-mdc-table de arriba
+// (header en mayúsculas sobre fondo sutil, hover de fila, alineación
+// numérica con .col-right).
+.cortes-table {
+  width: 100%; border-collapse: collapse; font-size: .875rem;
+
+  thead tr { background: var(--color-bg); }
+  th {
+    text-align: left; padding: 10px; font-weight: 600;
+    color: var(--color-text-muted); font-size: .78rem;
+    text-transform: uppercase; letter-spacing: .03em;
+    border-bottom: 1px solid var(--color-border);
+  }
+  td {
+    padding: 10px; border-bottom: 1px solid var(--color-border);
+  }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: rgba(0,0,0,.02); }
+  .col-right { text-align: right; }
 }
 
 // El paginador de Material no envuelve sus controles por defecto; en pantallas

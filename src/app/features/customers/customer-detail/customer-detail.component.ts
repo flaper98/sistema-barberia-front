@@ -26,11 +26,9 @@ export class CustomerDetailComponent implements OnInit {
   appointments: Appointment[] = [];
   loyaltyAccount: LoyaltyAccount | null = null;
   loyaltyMovements: LoyaltyMovement[] = [];
-  descripcionRecompensa = '';
   loading = true;
-  editandoRecompensa = false;
-  descripcionRecompensaEditada = '';
   premios: Reward[] = [];
+  premioSeleccionadoId: number | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -52,6 +50,10 @@ export class CustomerDetailComponent implements OnInit {
     return this.authService.hasRole(['ADMIN']) || this.permissionService.canEdit('FIDELIZACION');
   }
 
+  get esAdmin(): boolean {
+    return this.authService.hasRole(['ADMIN']);
+  }
+
   ngOnInit(): void {
     const id = +this.route.snapshot.paramMap.get('id')!;
     forkJoin({
@@ -60,17 +62,16 @@ export class CustomerDetailComponent implements OnInit {
       appointments: this.appointmentService.search({ clienteId: id }),
       loyalty:    this.loyaltyService.getByCustomer(id),
       movements:  this.loyaltyService.getMovementsByCustomer(id),
-      loyaltyConfig: this.loyaltyService.getConfig(),
       premios:    this.loyaltyService.getRewards(),
     }).subscribe({
-      next: ({ customer, sales, appointments, loyalty, movements, loyaltyConfig, premios }) => {
+      next: ({ customer, sales, appointments, loyalty, movements, premios }) => {
         this.customer = customer;
         this.sales = sales.filter(s => s.clienteId === id);
         this.appointments = appointments;
         this.loyaltyAccount = loyalty;
         this.loyaltyMovements = movements;
-        this.descripcionRecompensa = loyaltyConfig.descripcionRecompensa || 'Recompensa';
         this.premios = premios;
+        this.premioSeleccionadoId = premios[0]?.id ?? null;
         this.loading = false;
       },
       error: (err: Error) => {
@@ -82,7 +83,12 @@ export class CustomerDetailComponent implements OnInit {
 
   redeemReward(): void {
     if (!this.customer) return;
-    this.loyaltyService.redeemReward(this.customer.id).subscribe({
+    if (!this.premioSeleccionadoId) {
+      this.snackBar.open('Selecciona el premio que recibirá el cliente', 'Cerrar', { duration: 3000 });
+      return;
+    }
+    const premio = this.premios.find(p => p.id === this.premioSeleccionadoId);
+    this.loyaltyService.redeemReward(this.customer.id, this.premioSeleccionadoId).subscribe({
       next: (acc) => {
         if (this.loyaltyAccount) {
           this.loyaltyAccount = {
@@ -93,7 +99,7 @@ export class CustomerDetailComponent implements OnInit {
           };
         }
         this.customer!.recompensasDisponibles = acc.recompensasDisponibles;
-        this.snackBar.open('Recompensa canjeada exitosamente', '', { duration: 3000 });
+        this.snackBar.open(`Premio entregado: ${premio?.descripcion ?? ''}`, '', { duration: 3000 });
       },
       error: (err: Error) => this.snackBar.open(err.message, 'Cerrar', { duration: 3000 }),
     });
@@ -122,27 +128,5 @@ export class CustomerDetailComponent implements OnInit {
   getStampArray(count: number): number[] { return Array.from({ length: count }, (_, i) => i); }
   formatId(id: number): string { return formatCodigo(id); }
 
-  empezarEdicionRecompensa(): void {
-    this.descripcionRecompensaEditada = this.loyaltyAccount?.descripcionRecompensa ?? this.descripcionRecompensa;
-    this.editandoRecompensa = true;
-  }
-
-  cancelarEdicionRecompensa(): void {
-    this.editandoRecompensa = false;
-  }
-
-  guardarRecompensa(): void {
-    if (!this.customer) return;
-    this.loyaltyService.updateRewardDescription(this.customer.id, this.descripcionRecompensaEditada.trim()).subscribe({
-      next: (acc) => {
-        if (this.loyaltyAccount) {
-          this.loyaltyAccount = { ...this.loyaltyAccount, descripcionRecompensa: acc.descripcionRecompensa };
-        }
-        this.editandoRecompensa = false;
-        this.snackBar.open('Recompensa actualizada', '', { duration: 2000 });
-      },
-      error: (err: Error) => this.snackBar.open(err.message, 'Cerrar', { duration: 4000 }),
-    });
-  }
   getStatusClass(s: string): string { return s.toLowerCase().replace('_', '-'); }
 }

@@ -2,34 +2,142 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
+  align-items: stretch;
 }
 
+// Todas las cards estiran a la misma altura (align-items: stretch del grid)
+// y usan flex-column con .lc-body a flex:1 -- así el footer queda siempre
+// al ras inferior sin importar si la card muestra o no el banner de premio,
+// en vez de que el grid se vea desalineado por alturas distintas.
 .loyalty-card {
+  display: flex;
+  flex-direction: column;
+  border-top: 3px solid transparent;
+  transition: var(--transition);
+
+  &.has-reward {
+    border-top-color: var(--color-gold-dark);
+  }
+
   .lc-header {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
     .lc-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--color-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
-    .lc-name { font-weight: 600; }
-    .lc-rewards { margin-left: auto; display: flex; align-items: center; gap: 4px; color: var(--color-gold-dark); font-weight: 700; mat-icon { font-size: 20px; } }
+    .lc-identity { min-width: 0; }
+    .lc-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   }
 }
 
+.stamps-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px;
+  .stamps-count { font-size: .75rem; font-weight: 600; color: var(--color-text-muted); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+}
+
 .stamps-container {
-  display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
-  .stamps-count { font-size: .75rem; color: var(--color-text-muted); margin-left: 4px; }
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
 }
 
 .stamp-dot {
-  mat-icon { font-size: 22px; width: 22px; height: 22px; color: var(--color-border); transition: var(--transition); }
+  mat-icon { font-size: 20px; width: 20px; height: 20px; color: var(--color-border); transition: var(--transition); }
   &.filled mat-icon { color: var(--color-gold-dark); }
 }
 
-.reward-description {
-  display: flex; align-items: center; gap: 6px;
-  font-size: .82rem; color: var(--color-gold-dark); font-weight: 500; margin: 0;
-  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+// El cuerpo crece para empujar .lc-footer al fondo de la card -- ver nota
+// arriba de .loyalty-card sobre por qué todas necesitan la misma altura.
+.lc-body { flex: 1; display: flex; flex-direction: column; }
+
+.lc-last-activity { margin-top: auto; padding-top: 4px; }
+
+// ─── Banner de recompensa disponible ────────────────────────────────────────
+// Antes el selector de premio quedaba suelto en la card, con el mismo peso
+// visual que el resto -- siendo la acción más importante (hay un premio
+// esperando), se agrupa en un bloque destacado con fondo dorado suave.
+.reward-banner {
+  background: rgba(255, 215, 64, .12);
+  border: 1px solid rgba(255, 196, 0, .35);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-top: auto;
 }
 
-.lc-footer { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+.reward-banner-head {
+  display: flex; align-items: center; gap: 6px;
+  font-weight: 700; font-size: .85rem; color: #B26A00;
+  margin-bottom: 10px;
+  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+}
+
+.reward-assigned {
+  display: flex; flex-direction: column; gap: 2px;
+  .reward-assigned-label {
+    font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: #B26A00;
+  }
+  .reward-assigned-name { font-weight: 600; font-size: .95rem; }
+}
+
+.reward-warning {
+  display: flex; align-items: center; gap: 6px;
+  font-size: .8rem; color: var(--color-text-muted); font-weight: 500; margin: 0;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--color-warn); }
+}
+
+.reward-select {
+  width: 100%;
+  ::ng-deep .mat-mdc-text-field-wrapper { background: var(--color-surface); }
+}
+
+.reward-btn { width: 100%; }
+
+.rewards-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+  .new-reward { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  mat-form-field { min-width: 280px; }
+}
+
+.reward-edit-field { width: min(100%, 420px); margin-bottom: -1.25em; }
+.reward-actions { white-space: nowrap; }
+
+.rewards-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; padding: 0 6px; margin-left: 6px;
+  border-radius: 10px; background: var(--color-bg); color: var(--color-text-muted);
+  font-size: .7rem; font-weight: 700; vertical-align: middle;
+}
+
+// ─── Tabla de catálogo de premios ───────────────────────────────────────────
+.rewards-table {
+  .col-right { text-align: right; }
+
+  // Un premio desactivado se atenúa en toda la fila -- refuerza visualmente
+  // que ya no está disponible para entregar, no solo el toggle lo dice.
+  tr.inactive-row {
+    .reward-name { opacity: .5; }
+  }
+}
+
+.reward-name {
+  display: flex; align-items: center; gap: 8px;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--color-gold-dark); flex-shrink: 0; }
+}
+
+// El toggle de Material no distingue color por estado -- se ve igual
+// "activo" e "inactivo" salvo por la posición. Se fuerza verde/gris para
+// que el estado se lea de un vistazo, sin tener que fijarse en el texto.
+.reward-status-toggle {
+  font-size: .8rem;
+  ::ng-deep .mdc-switch__track { opacity: 1 !important; }
+  &.active ::ng-deep .mdc-switch__track::after { background: var(--color-success) !important; }
+  &:not(.active) ::ng-deep .mdc-switch__track::after { background: var(--color-border) !important; }
+  &.active ::ng-deep .mdc-switch__handle::after { background: var(--color-success) !important; }
+}
+
+// Acciones secundarias de corrección manual (agregar/quitar sello) --
+// separadas con un borde superior y en tamaño compacto para que no compitan
+// visualmente con el banner de "Entregar premio", que es la acción principal.
+.lc-footer {
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-border);
+  display: flex; gap: 8px; flex-wrap: wrap;
+  button { font-size: .8rem; }
+}
 
 .empty-state {
   grid-column: 1/-1; text-align: center; padding: 48px; color: var(--color-text-muted);
@@ -37,19 +145,6 @@
   p { font-size: .875rem; margin: 0; }
 }
 
-// Tabla de "Qué aplica sello" (mismo estilo que .cortes-table en
-// commissions-dashboard, encapsulado aparte porque los estilos de
-// componente no se comparten entre uno y otro).
-.cortes-table {
-  width: 100%; border-collapse: collapse; font-size: .875rem;
-
-  th {
-    text-align: left; padding: 8px 10px; font-weight: 600;
-    color: var(--color-text-muted); font-size: .78rem;
-    border-bottom: 1px solid var(--color-border);
-  }
-  td {
-    padding: 10px; border-bottom: 1px solid var(--color-border);
-  }
-  tr:last-child td { border-bottom: none; }
-}
+// .cortes-table (usada acá en "Qué aplica sello" y en .rewards-table de
+// arriba) ahora vive en styles.scss (global) para que la misma mejora
+// visual se refleje en Comisiones sin duplicar el bloque.

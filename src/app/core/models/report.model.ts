@@ -58,6 +58,13 @@ export interface LoyaltyReporte {
   promedioSellosPorCliente: number;
 }
 
+export interface IngresosPorMetodoPagoReporte {
+  metodoPago: string;
+  total: number;
+  cantidad: number;
+  porcentaje: number;
+}
+
 export interface ReportFilters {
   desde: string;
   hasta: string;

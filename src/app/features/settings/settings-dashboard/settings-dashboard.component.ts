@@ -67,7 +67,7 @@ export class SettingsDashboardComponent implements OnInit {
     });
 
     this.loyaltyForm = this.fb.group({
-      sellosNecesarios: [5, [Validators.required, Validators.min(1)]],
+      sellosNecesarios: [6, [Validators.required, Validators.min(1)]],
       sellosPorGanancia: [1, [Validators.required, Validators.min(1)]],
       descripcionRecompensa: [''],
       activo: [true, Validators.required],

@@ -1,0 +1,67 @@
+// Matriz de permisos: cada rol ocupa 3 columnas (Ver/Editar/Eliminar) bajo
+// un mismo encabezado agrupador -- se separa cada bloque de rol con un
+// borde vertical para que se distinga de un vistazo dónde empieza cada uno
+// en una tabla que puede volverse ancha con varios roles.
+.permisos-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .875rem;
+
+  th, td {
+    padding: 8px 12px;
+  }
+
+  thead tr:first-child th {
+    background: var(--color-bg);
+    font-weight: 600;
+    font-size: .78rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    text-align: center;
+    border-bottom: 1px solid var(--color-border);
+  }
+  thead tr:first-child th:first-child { text-align: left; }
+
+  thead tr:last-child th {
+    font-weight: 500;
+    font-size: .78rem;
+    color: var(--color-text-muted);
+    text-align: center;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .rol-group { border-left: 1px solid var(--color-border); }
+
+  tbody td {
+    text-align: center;
+    border-bottom: 1px solid var(--color-border);
+  }
+  tbody td:first-child {
+    text-align: left;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: rgba(0,0,0,.02); }
+}
+
+.table-scroll { overflow-x: auto; }
+
+.commissions-detail-card {
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+
+  h3 { margin: 0 0 8px; font-size: 1rem; font-weight: 600; }
+  p { margin: 0 0 16px; }
+}
+
+.commissions-detail-options {
+  display: flex; gap: 24px; flex-wrap: wrap;
+
+  label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+}
